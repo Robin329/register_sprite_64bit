@@ -22,13 +22,13 @@
 
 '''
     @file: _color_operations.py
-    @author: hz
+    @author: Robin
     @version:
     @date: 21-10-2020
     @brief: Color lib for tkinter widgets
 '''
 '''
-    @attention:  Color initials capitalized 
+    @attention:  Color initials capitalized
 '''
 colors = '''#FFB6C1 LightPink 浅粉红
 #FFC0CB Pink 粉红
@@ -334,9 +334,9 @@ import random
 class ColorChoiceFrame(Toplevel):
     '''
         @file: _color_operations.py
-        @author: hz
+        @author: Robin
         @version:
-        @date: 2020-10-22
+        @date: 2022-10-12
         @brief: 样式色彩相关操作
 
     '''

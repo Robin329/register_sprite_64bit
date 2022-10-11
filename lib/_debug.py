@@ -27,9 +27,9 @@ from lib import _color_operations
 
 '''
     @file: _debug.py
-    @author: hz
-    @version: v1.1
-    @date: 2020-10-22
+    @author: Robin
+    @version: v2.1
+    @date: 2022-10-12
     @brief: 调试相关
 '''
 ONE_SPACE = " "

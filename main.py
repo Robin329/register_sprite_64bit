@@ -64,7 +64,45 @@ class MyGui(Frame):
             self.value = value
 
     # event start ***************************************************
+    # 10进制Entry回车事件处理函数
+    def update_dec_btn_val_by_entry(self, event):
+        origin_decimal_data = self.decimal_output.get()
+        # 数据处理
+        # 16进制转10进制
 
+        hex_data = hex(int(origin_decimal_data))
+        dec_data = 0
+        weight = len(hex_data) - 1  # 权
+        # 遍历十六进制数据各位（从左边开始）,递减权重
+        for bit in hex_data:
+            # 判断数据有效性，累加十进制数据
+            if bit in list(self.upper_str_hex_after9) or bit in list(self.upper_str_hex_after9.lower()):
+                dec_data += self.dict_hex_after9[bit] * pow(16, weight)
+            else:
+                # 打印错误信息
+                print(self.fontstyle.color_font("ERROR, Unrecognized HEX <{}> From User Input!", 7, 63, 40).format(bit))
+
+            weight -= 1
+
+        # 获取数据二进制字符串
+        dec_data = int(dec_data)
+        dec_data = int(dec_data)
+        str_bin_data = str(bin(dec_data))[2:]
+
+        # 设置按钮位
+        btn_cnt = 64
+        data_length = len(str_bin_data)
+        for btn in self.btn_list:
+            if btn_cnt > data_length:
+                btn['text'] = '0'
+                btn_cnt -= 1
+                continue
+            btn['text'] = str_bin_data[0]
+            str_bin_data = str_bin_data[1:]
+
+        # 更新样式以及数据
+        self.update_btn_style()
+        self.show_data()
     # 16进制Entry回车事件处理函数
     def update_btn_val_by_entry(self, event):
         origin_data = self.hex_output.get()
@@ -469,7 +507,7 @@ class MyGui(Frame):
                                     background='#f0f0f0',
                                     width=40,
                                     font=("宋体", 12, "bold"))
-        # self.decimal_output.bind('<Return>', func=self.update_btn_val_by_entry)
+        self.decimal_output.bind('<Return>', func=self.update_dec_btn_val_by_entry)
         self.decimal_output.pack(side=TOP)
 
         self.octal_output = Entry(self.frame_entry,
@@ -960,7 +998,7 @@ class MyGui(Frame):
     # 背景色切换函数
     def ChangeBackgroundColor(self, color):
         '''
-            @author: hz
+            @author: Robin
         :param color: 用户将要切换的背景颜色
         :return: 程序执行状态
         '''
@@ -976,6 +1014,8 @@ class MyGui(Frame):
 
             # 背景颜色更换操作
             self.Window.configure(bg=self.bg_color.value)
+            self.frame_btn_row1.configure(bg=self.bg_color.value)
+            self.frame_btn_row2.configure(bg=self.bg_color.value)
             self.frame_btn_row3.configure(bg=self.bg_color.value)
             self.frame_btn_row4.configure(bg=self.bg_color.value)
             self.frame_label.configure(bg=self.bg_color.value)

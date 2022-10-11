@@ -18,7 +18,7 @@
 
 '''
     @file: _file_operations.py
-    @author: hz
+    @author: Robin
     @version: v1.2
     @date: 2020-11-29
     @brief: register_sprite update
