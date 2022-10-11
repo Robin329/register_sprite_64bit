@@ -1,5 +1,5 @@
 # python excutable path
-# RegisterSprite  Copyright (C) 2020  jessenhua (h1657802074@gmail.com)
+# RegisterSprite  Copyright (C) 2020  Robin (jiangrenbin329@gmail.com)
 
 # This file is part of RegisterSprite
 
