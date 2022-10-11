@@ -121,5 +121,5 @@ from tkinter import Tk, Label, Button, Toplevel
   > 你的每一份贡献都是对这个项目极大的帮助
 
 
-@[hz2](https://github.com/Robin329/)
-我的个人邮箱（jiangrenbin@gmail.com）
+@[Robin329](https://github.com/Robin329/)
+我的个人邮箱（jiangrenbin329@gmail.com）
