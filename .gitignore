@@ -1,0 +1,8 @@
+lib/__pycache__/*.pyc
+!lib/*.py
+/.idea/
+/.venv/
+!/doc/
+/user-config-test.ini
+dist/
+
