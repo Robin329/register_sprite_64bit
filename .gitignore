@@ -5,4 +5,4 @@ lib/__pycache__/*.pyc
 !/doc/
 /user-config-test.ini
 dist/
-
+build/
