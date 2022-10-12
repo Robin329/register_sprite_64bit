@@ -942,7 +942,7 @@ class MyGui(Frame):
         # 右移数据处理
         origin_bin = '0'
         origin_bin += _bin
-        _bin = origin_bin[:63]
+        _bin = origin_bin[:64]
 
         # 更新数据
         cnt = 0
