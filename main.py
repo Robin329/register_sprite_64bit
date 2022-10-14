@@ -501,6 +501,7 @@ class MyGui(Frame):
                                 width=40,
                                 font=("宋体", 12, "bold"))
         self.hex_output.bind('<Return>', func=self.update_btn_val_by_entry)
+        self.hex_output.bind('<Escape>', func=self.bit_reset)
         self.hex_output.pack(side=TOP)
 
         self.decimal_output = Entry(self.frame_entry,
@@ -508,6 +509,7 @@ class MyGui(Frame):
                                     width=40,
                                     font=("宋体", 12, "bold"))
         self.decimal_output.bind('<Return>', func=self.update_dec_btn_val_by_entry)
+        self.decimal_output.bind('<Escape>', func=self.bit_reset)
         self.decimal_output.pack(side=TOP)
 
         self.octal_output = Entry(self.frame_entry,
@@ -869,7 +871,7 @@ class MyGui(Frame):
     '''
 
     @_debug.printk()
-    def bit_reset(self):
+    def bit_reset(self, event=None):
         # 遍历按钮列表，将按钮恢复至初始状态，即数值0样式为升起
         for btn in self.btn_list:
             btn.config(text='0')
