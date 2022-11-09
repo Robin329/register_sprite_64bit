@@ -787,10 +787,14 @@ class MyGui(Frame):
         elif this_dec >= 0x100000 and this_dec < 0x40000000:
             result = this_dec / 0x100000
             self.label_unit_size['text'] = "MByte"
-        else:
+        elif this_dec >= 0x40000000 and this_dec < 0x10000000000:
             this_dec = dec + 1
             result = this_dec / 0x40000000
             self.label_unit_size['text'] = "GByte"
+        else:
+            this_dec = dec + 1
+            result = this_dec / 0x10000000000
+            self.label_unit_size['text'] = "TByte"
 
         self.entry_bin_size.insert(0, result)
         self.binary_output['state'] = 'readonly'  # 将二进制回显区设置为只读
