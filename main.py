@@ -721,7 +721,7 @@ class MyGui(Frame):
         # 置位数据处理
         hex_bit_dict = {}  # 总16进制数据字典
         hex_bit_list = bin_show.split(' ')[:16]
-        bit_index = 15  # 64位模式  8组4位二进制数据
+        bit_index = 15  # 64位模式  16组4位二进制数据
 
         # 遍历列表将数据以如下形式保存到字典中
         # 7:0000  6:0000
