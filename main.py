@@ -47,8 +47,12 @@ https://github.com/Robin329/register_sprite_64bit
 
 # import **************************************************
 import os
+import sys
 import tkinter as tk
-from tkinter import *
+if sys.version_info[0] < 3:
+    from Tkinter import *
+else:
+    from tkinter import *
 from tkinter import messagebox
 
 from lib import _color_operations
@@ -607,6 +611,15 @@ class MyGui(Frame):
         self.pro_btn_frame.pack(side=TOP)
 
         self.frame_data_size = Frame(self.frame_choice)
+
+        # “+”
+        self.add_btn = Button(self.pro_btn_frame,
+                              background=self.btn_color.value,
+                              text="+")
+        self.add_btn.config(command=self.calc_add)
+        self.add_btn.pack(side=TOP)
+        self.add_btn.pack_forget()
+        self.add_btn.pack(side=LEFT, padx=10, pady=10)
         # 数据大小，单位KB
         self.label_bin_size = Label(self.frame_data_size,
                                     background=self.bg_color.value,
@@ -890,6 +903,14 @@ class MyGui(Frame):
         self.clear_value()  # 清除数据
         self.init_value()  # 初始化数据
         # self.show_data()
+    '''
+        加功能函数
+    '''
+    @_debug.printk
+    def calc_add(self):
+        for btn in self.btn_list:
+           btn.config(text='0')
+        self.update_btn_style()
 
     '''
         求非功能函数

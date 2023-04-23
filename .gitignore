@@ -6,3 +6,4 @@ lib/__pycache__/*.pyc
 /user-config-test.ini
 dist/
 build/
+.history/
