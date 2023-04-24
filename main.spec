@@ -42,3 +42,9 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+app = BUNDLE(
+    exe,
+    name='main.app',
+    icon=None,
+    bundle_identifier=None,
+)

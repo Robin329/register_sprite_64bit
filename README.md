@@ -69,29 +69,30 @@ git pull origin
   > 详情见文档目录
 
 目录结构及说明
+```shell
 ----
-├── build		*----------可执行文件(最初版本)* <br>
-│   └── main.exe		<br>
-├── doc		*----------软件文档目录* <br>
-│   ├── 更详细的软件结构说明.txt		<br>
-│   └── 更新日志.txt		<br>
-│   └── ...		<br>
-├── lib		*----------库文件*<br>
-│   ├── __init__.py		<br>
-│   ├── _debug.py		*----------调试库*<br>
-│   └── _color_operations.py		*----------样式库*<br>
-│   └── _file_operations.py		*----------文件操作库*<br>
-├── LICENSE		*----------许可证信息*<br>
-├── main.py		*----------主程序*<br>
-├── README.en.md	*----------README for english*	<br>
-├── README.md	*----------README*	<br>
-├── user-config.ini	  *----------用户配置文件*	<br>
-├── run.bat	  *----------batch启动文件*	<br>
-├── run.sh	  *----------shell启动文件*	<br>
-└── src		*-----------资源目录*<br>
+├── build		*----------可执行文件(最初版本)*
+│   └── main.exe
+├── doc		*----------软件文档目录*
+│   ├── 更详细的软件结构说明.txt
+│   └── 更新日志.txt
+│   └── ...
+├── lib		*----------库文件*
+│   ├── __init__.py
+│   ├── _debug.py		*----------调试库*
+│   └── _color_operations.py		*----------样式库*
+│   └── _file_operations.py		*----------文件操作库*
+├── LICENSE		*----------许可证信息*
+├── main.py		*----------主程序*
+├── README.en.md	*----------README for english*
+├── README.md	*----------README*
+├── user-config.ini	  *----------用户配置文件*
+├── run.bat	  *----------batch启动文件*
+├── run.sh	  *----------shell启动文件*
+└── src		*-----------资源目录*
 
 *5 directories, 13 files*
-
+```
 使用到的库
 -----
 ```python
