@@ -1,4 +1,3 @@
-```python
 import tkinter as tk
 
 # 创建一个 Tkinter 窗口
@@ -74,5 +73,3 @@ button_clear.grid(row=5, column=1)
 button_divide.grid(row=5, column=2)
 button_equal.grid(row=5, column=3)
 root.mainloop()
-
-```

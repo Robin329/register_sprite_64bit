@@ -66,14 +66,41 @@ class MyGui(Frame):
         def __init__(self, name, value):
             self.name = name
             self.value = value
-
+    # 类里面定义全局变量
+    expression = 0
+    calc_add = 0
+    calc_sub = 0
+    calc_multi = 0
+    calc_div = 0
+    calc_equal = 0
+    expres = ""
     # event start ***************************************************
     # 10进制Entry回车事件处理函数
     def update_dec_btn_val_by_entry(self, event):
         origin_decimal_data = self.decimal_output.get()
         # 数据处理
         # 16进制转10进制
+        if self.calc_add == 1:
+            self.expression += int(origin_decimal_data)
+            origin_decimal_data = str(self.expression)
+            self.calc_add = 0
 
+        if self.calc_sub == 1:
+            self.expression -= int(origin_decimal_data)
+            origin_decimal_data = str(self.expression)
+            self.calc_sub = 0
+
+        if self.calc_multi == 1:
+            self.expression *= int(origin_decimal_data)
+            origin_decimal_data = str(self.expression)
+            self.calc_multi = 0
+
+        if self.calc_div == 1:
+            self.expression //= int(origin_decimal_data)
+            origin_decimal_data = str(self.expression)
+            self.calc_div = 0
+
+        print("expression:" + str(self.expression) + "  origin_decimal_data:" + origin_decimal_data)
         hex_data = hex(int(origin_decimal_data))
         dec_data = 0
         weight = len(hex_data) - 1  # 权
@@ -107,6 +134,7 @@ class MyGui(Frame):
         # 更新样式以及数据
         self.update_btn_style()
         self.show_data()
+        self.expression = 0
     # 16进制Entry回车事件处理函数
     def update_btn_val_by_entry(self, event):
         origin_data = self.hex_output.get()
@@ -116,6 +144,25 @@ class MyGui(Frame):
 
         # 数据处理
         # 16进制转10进制
+        if self.calc_add == 1:
+            self.expression += int(origin_data)
+            origin_data = str(self.expression)
+            self.calc_add = 0
+
+        if self.calc_sub == 1:
+            self.expression -= int(origin_data)
+            origin_data = str(self.expression)
+            self.calc_sub = 0
+
+        if self.calc_multi == 1:
+            self.expression *= int(origin_data)
+            origin_data = str(self.expression)
+            self.calc_multi = 0
+
+        if self.calc_div == 1:
+            self.expression //= int(origin_data)
+            origin_data = str(self.expression)
+            self.calc_div = 0
 
         hex_data = origin_data
         dec_data = 0
@@ -150,6 +197,7 @@ class MyGui(Frame):
         # 更新样式以及数据
         self.update_btn_style()
         self.show_data()
+        self.expression = 0
 
     # event end ***************************************************
 
@@ -241,6 +289,7 @@ class MyGui(Frame):
 
         self.frame_show = Frame(self.Window)
         self.frame_choice = Frame(self.frame_show)
+        self.frame_calc = Frame(self.frame_show)
         self.frame_label = Frame(self.frame_show)
         self.frame_entry = Frame(self.frame_show)
 
@@ -470,6 +519,7 @@ class MyGui(Frame):
 
         frame_label用来存放进制的提示区
         frame_entry用来存放进制的回显区
+        frame_calc用来计算'+','-','*','/'
         frame_choice用来存放复选功能
         以上三者继承自frame_show
         '''
@@ -610,17 +660,47 @@ class MyGui(Frame):
 
         self.pro_btn_frame.pack(side=TOP)
 
-        self.frame_data_size = Frame(self.frame_choice)
-
-        # “+”
-        self.add_btn = Button(self.pro_btn_frame,
+        # "+"
+        self.calc_btn_frame = Frame(self.frame_choice)
+        self.add_btn = Button(self.calc_btn_frame,
                               background=self.btn_color.value,
-                              text="+")
+                              text="+",width=3, height=1)
         self.add_btn.config(command=self.calc_add)
-        self.add_btn.pack(side=TOP)
-        self.add_btn.pack_forget()
-        self.add_btn.pack(side=LEFT, padx=10, pady=10)
+        self.add_btn.pack(side=LEFT)
+        self.calc_btn_frame.pack(side=TOP)
+
+        # "-"
+        self.sub_btn = Button(self.calc_btn_frame,
+                              background=self.btn_color.value,
+                              text="-",width=3, height=1)
+        self.sub_btn.config(command=self.calc_sub)
+        self.sub_btn.pack(side=LEFT)
+
+
+        # "*"
+        self.multi_btn = Button(self.calc_btn_frame,
+                              background=self.btn_color.value,
+                              text="*",width=3, height=1)
+        self.multi_btn.config(command=self.calc_multi)
+        self.multi_btn.pack(side=LEFT)
+
+
+        # "/"
+        self.div_btn = Button(self.calc_btn_frame,
+                              background=self.btn_color.value,
+                              text="/",width=3, height=1)
+        self.div_btn.config(command=self.calc_div)
+        self.div_btn.pack(side=LEFT)
+
+        # "="
+        self.div_btn = Button(self.calc_btn_frame,
+                              background=self.btn_color.value,
+                              text="=",width=3, height=1)
+        self.div_btn.config(command=self.calc_equal)
+        self.div_btn.pack(side=LEFT)
+
         # 数据大小，单位KB
+        self.frame_data_size = Frame(self.frame_choice)
         self.label_bin_size = Label(self.frame_data_size,
                                     background=self.bg_color.value,
                                     text="数据大小",
@@ -704,6 +784,10 @@ class MyGui(Frame):
 
         # 进制转换
         dec = int(_bin, 2)
+        if self.calc_equal == 1:
+            dec = self.expression
+            print("dec: %d" % dec)
+            print(f"dec: {dec}")
         not_dec = int(not_bin, 2)
         _hex = hex(dec)
         not_hex = hex(not_dec)
@@ -903,15 +987,105 @@ class MyGui(Frame):
         self.clear_value()  # 清除数据
         self.init_value()  # 初始化数据
         # self.show_data()
-    '''
-        加功能函数
-    '''
-    @_debug.printk
-    def calc_add(self):
-        for btn in self.btn_list:
-           btn.config(text='0')
-        self.update_btn_style()
 
+    # 计算表达式的函数
+    def evaluate_expression(self):
+        self.expres = self.decimal_output.get()
+        print(str(sys._getframe().f_lineno) + " expres:" + self.expres)
+        ret = 0
+        try:
+            ret = int(str(eval(self.expres)))
+            self.expres = ""
+        except:
+            self.expres = ""
+            raise Exception("Invalid expression")
+        return ret
+
+    # 清除表达式的函数
+    @_debug.printk()
+    def clear_expression(self):
+        self.expres = ""
+
+    '''
+        计算器加功能函数
+    '''
+    # 计算表达式的函数
+    @_debug.printk()
+    def calc_add(self):
+        self.calc_add = 1
+        # 得到二进制数据
+        _bin = self.get_bin_value(mode='normal')
+
+        # 判断数据是否有效
+        if int(_bin) == 0:
+            return
+        _dec = int(_bin, 2)
+        self.expression += _dec
+        print(str(sys._getframe().f_lineno) + "\"+\" expression: " + str(self.expression) + " _bin: " + _bin)
+        self.update_btn_style()
+        self.show_data()
+    '''
+        计算器减功能函数
+    '''
+    @_debug.printk()
+    def calc_sub(self):
+        self.calc_sub = 1
+        # 得到二进制数据
+        _bin = self.get_bin_value(mode='normal')
+
+        # 判断数据是否有效
+        if int(_bin) == 0:
+            return
+        _dec = int(_bin, 2)
+        self.expression = _dec - self.expression
+        print(str(sys._getframe().f_lineno) + "\"-\" expression: " + str(self.expression) + " _bin: " + _bin)
+        self.update_btn_style()
+        self.show_data()
+    '''
+        计算器乘功能函数
+    '''
+    @_debug.printk()
+    def calc_multi(self):
+        self.calc_multi = 1
+        # 得到二进制数据
+        _bin = self.get_bin_value(mode='normal')
+
+        # 判断数据是否有效
+        if int(_bin) == 0:
+            return
+        _dec = int(_bin, 2)
+        self.expression *= _dec
+        print( str(sys._getframe().f_lineno) + "\"*\" expression: " + str(self.expression) + " _bin: " + _bin)
+        self.update_btn_style()
+        self.show_data()
+    '''
+        计算器除功能函数
+    '''
+    @_debug.printk()
+    def calc_div(self):
+        self.calc_div = 1
+        # 得到二进制数据
+        _bin = self.get_bin_value(mode='normal')
+
+        # 判断数据是否有效
+        if int(_bin) == 0:
+            return
+        _dec = int(_bin, 2)
+        self.expression = _dec
+        print(str(sys._getframe().f_lineno) + "\"/\" expression: " + str(self.expression) + " _dec: " + str(_dec))
+        self.update_btn_style()
+        self.show_data()
+    '''
+        计算器等于功能函数
+    '''
+    @_debug.printk()
+    def calc_equal(self):
+        self.calc_equal = 1
+        self.expression = self.evaluate_expression()
+        print(str(sys._getframe().f_lineno) + " expression: " + str(self.expression))
+        self.update_btn_style()
+        self.show_data()
+        self.calc_equal = 0
     '''
         求非功能函数
     '''
