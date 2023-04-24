@@ -5,7 +5,7 @@ Register Sprite 64bit
 :Authors:
         Robin (jiangrenbin329@gmail.com)
 
-:Version: 1.0 of 2022/10/12
+:Version: 1.0 of 2023/04/23
 
 Description
 -----------

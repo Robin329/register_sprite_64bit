@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# RegisterSprite  Copyright (C) 2022  Robin (jiangrenbin329@gmail.com)
+# RegisterSprite  Copyright (C) 2022-2023  Robin (jiangrenbin329@gmail.com)
 
 # This file is part of RegisterSprite
 #   ____ ____  _      __     _______  ___
@@ -334,7 +334,7 @@ class MyGui(Frame):
             """
                 寄存器小精灵 | Register Sprite 64bit
                 项目地址： http://www.github.com/Robin329/register_sprite_64bit
-                版本： v2022.10
+                版本： v2023.04
             """
         messagebox.showinfo("关于", about_info)
 
