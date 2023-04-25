@@ -78,7 +78,7 @@ class MyGui(Frame):
     # 10进制Entry回车事件处理函数
     def update_dec_btn_val_by_entry(self, event):
         origin_decimal_data = self.decimal_output.get()
-        origin_decimal_data = str(eval(origin_decimal_data))
+        origin_decimal_data = str(int(eval(origin_decimal_data)))
         # 数据处理
         # 16进制转10进制
         if self.calc_add == 1:
@@ -995,7 +995,7 @@ class MyGui(Frame):
         print(str(sys._getframe().f_lineno) + " expres:" + self.expres)
         ret = 0
         try:
-            ret = int(str(eval(self.expres)))
+            ret = int(str(int(eval(self.expres))))
             self.expres = ""
         except:
             self.expres = ""
