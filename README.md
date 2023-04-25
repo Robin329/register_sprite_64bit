@@ -10,7 +10,18 @@
                    |___/                           |_|
 ```
 
+[![GitHub license](https://img.shields.io/github/license/Robin329/register_sprite_64bit.svg)](https://github.com/Robin329/register_sprite_64bit/blob/master/LICENSE)
+[![GitHub contributors](https://img.shields.io/github/contributors/Robin329/register_sprite_64bit.svg)](https://GitHub.com/Robin329/register_sprite_64bit/graphs/contributors/)
+[![GitHub issues](https://img.shields.io/github/issues/Robin329/register_sprite_64bit.svg)](https://GitHub.com/Robin329/register_sprite_64bit/issues/)
+[![GitHub pull-requests](https://img.shields.io/github/issues-pr/Robin329/register_sprite_64bit.svg)](https://GitHub.com/Robin329/register_sprite_64bit/pulls/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+
+[![GitHub watchers](https://img.shields.io/github/watchers/Robin329/register_sprite_64bit.svg?style=social&label=Watch)](https://GitHub.com/Robin329/register_sprite_64bit/watchers/)
+[![GitHub forks](https://img.shields.io/github/forks/Robin329/register_sprite_64bit.svg?style=social&label=Fork)](https://GitHub.com/Robin329/register_sprite_64bit/network/)
+[![GitHub stars](https://img.shields.io/github/stars/Robin329/register_sprite_64bit.svg?style=social&label=Star)](https://GitHub.com/Robin329/register_sprite_64bit/stargazers/)
+
 [![English](https://img.shields.io/badge/-English-yellow)](README.en.md)
+
 
 # **寄存器小精灵**
 
