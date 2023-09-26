@@ -46,6 +46,10 @@ https://github.com/Robin329/register_sprite_64bit
 """
 
 # import **************************************************
+from lib import _file_operations
+from lib import _debug
+from lib import _color_operations
+from tkinter import messagebox
 import os
 import sys
 import tkinter as tk
@@ -53,11 +57,6 @@ if sys.version_info[0] < 3:
     from Tkinter import *
 else:
     from tkinter import *
-from tkinter import messagebox
-
-from lib import _color_operations
-from lib import _debug
-from lib import _file_operations
 
 
 class MyGui(Frame):
@@ -74,6 +73,7 @@ class MyGui(Frame):
     calc_div = 0
     calc_equal = 0
     expres = ""
+
     # event start ***************************************************
     # 10进制Entry回车事件处理函数
     def update_dec_btn_val_by_entry(self, event):
@@ -101,7 +101,8 @@ class MyGui(Frame):
             origin_decimal_data = str(self.expression)
             self.calc_div = 0
 
-        print("expression:" + str(self.expression) + "  origin_decimal_data:" + origin_decimal_data)
+        print(str(sys._getframe().f_lineno) + ": expression:" +
+              str(self.expression) + "  origin_decimal_data:" + origin_decimal_data)
         hex_data = hex(int(origin_decimal_data))
         dec_data = 0
         weight = len(hex_data) - 1  # 权
@@ -112,7 +113,8 @@ class MyGui(Frame):
                 dec_data += self.dict_hex_after9[bit] * pow(16, weight)
             else:
                 # 打印错误信息
-                print(self.fontstyle.color_font("ERROR, Unrecognized HEX <{}> From User Input!", 7, 63, 40).format(bit))
+                print(self.fontstyle.color_font(
+                    "ERROR, Unrecognized HEX <{}> From User Input!", 7, 63, 40).format(bit))
 
             weight -= 1
 
@@ -137,6 +139,7 @@ class MyGui(Frame):
         self.show_data()
         self.expression = 0
     # 16进制Entry回车事件处理函数
+
     def update_btn_val_by_entry(self, event):
         origin_data = self.hex_output.get()
         # 尝试去除0x前缀
@@ -175,7 +178,8 @@ class MyGui(Frame):
                 dec_data += self.dict_hex_after9[bit] * pow(16, weight)
             else:
                 # 打印错误信息
-                print(self.fontstyle.color_font("ERROR, Unrecognized HEX <{}> From User Input!", 7, 63, 40).format(bit))
+                print(self.fontstyle.color_font(
+                    "ERROR, Unrecognized HEX <{}> From User Input!", 7, 63, 40).format(bit))
 
             weight -= 1
 
@@ -249,6 +253,9 @@ class MyGui(Frame):
             self.dict_hex_after9[lower_str_hex_after9[i]] = i
 
         # 初始化操作
+        self.log_on = BooleanVar()
+        self.log_on.set(False)
+        self.log_file = os.path.join(os.getcwd()+"log", "log.txt")  # 用于存储日志的路径
         self.init_user_config()
         self.init_frame()
         self.init_menu()
@@ -256,6 +263,23 @@ class MyGui(Frame):
         self.init_view()
 
         # print(self.ChangeBackgroundColor(self.bg_color))
+    @_debug.printk()
+    def log_print(self, text):  # 新增一个方法，用于替代 print 方法
+        if self.log_on.get():  # 如果日志状态为 True，则将字符串写入日志文件，并添加换行符
+            log_file = open(self.log_file, 'a')
+            log_file.write(text + '\n')
+            log_file.close()
+        print(text)  # 无论日志状态如何，都使用 print 方法将字符串打印到控制台
+
+    def log_write(self, text):  # 新增一个方法，用于将字符串写入日志文件
+        if self.log_on.get():  # 如果日志状态为 True，则将字符串写入日志文件，并添加换行符
+            try:  # 新增一个 try-except 语句，用于捕获可能发生的异常，并显示错误信息
+                # 修改为使用 x 模式来创建日志文件，如果文件已存在，则抛出 FileExistsError 异常
+                log_file = open(self.log_file, 'x')
+                log_file.write(text + '\n')
+                log_file.close()
+            except FileExistsError as e:  # 新增一个异常处理语句，用于显示文件已存在的错误信息
+                messagebox.showerror("错误", str(e))
 
     @_debug.printk()
     def init_user_config(self):
@@ -279,11 +303,13 @@ class MyGui(Frame):
             except:
                 print('Title section not found! Using default window title')
 
-            self.fops.write_config(self.path_user_config, 'Title', 'MainWindowTitle', self.main_window_title)
+            self.fops.write_config(
+                self.path_user_config, 'Title', 'MainWindowTitle', self.main_window_title)
             pass
         else:
             # 将默认标题属性值写入配置文件
-            self.fops.write_config(self.path_user_config, 'Title', 'MainWindowTitle', self.main_window_title)
+            self.fops.write_config(
+                self.path_user_config, 'Title', 'MainWindowTitle', self.main_window_title)
             pass
         # 设置标题
         self.Window.title(self.main_window_title)
@@ -314,13 +340,40 @@ class MyGui(Frame):
         fileBar = Menu(menuBar, tearoff=0)
         fileBar.add_cascade(label="设置", menu=settingBar, font=menu_font_tuple)
         fileBar.add_separator()
-        fileBar.add_command(label="退出", command=self.my_quit, font=menu_font_tuple)
+        fileBar.add_command(
+            label="退出", command=self.my_quit, font=menu_font_tuple)
         menuBar.add_cascade(label='文件', menu=fileBar, font=menu_font_tuple)
+
+        # 日志菜单
+        logBar = Menu(menuBar, tearoff=0)
+        logBar.add_checkbutton(
+            label="开", variable=self.log_on, command=self.logSetting, font=menu_font_tuple)
+        menuBar.add_cascade(label='日志', menu=logBar, font=menu_font_tuple)
 
         # 帮助菜单
         helpBar = Menu(menuBar, tearoff=0)
-        helpBar.add_command(label="关于", command=self.about, font=menu_font_tuple)
+        helpBar.add_command(label="关于", command=self.about,
+                            font=menu_font_tuple)
         menuBar.add_cascade(label="帮助", menu=helpBar, font=menu_font_tuple)
+
+    def logSetting(self):
+        print("Log settings")
+        logon_off = """日志打开"""
+        if self.log_on.get():  # 如果日志状态为 True，则显示打开提示
+            logon_off = """日志打开"""
+            message = self.fontstyle.color_font(text=logon_off,
+                                                display_type=7,
+                                                foreground_color=32,
+                                                backgroud_color=40)
+            print(message)
+        else:  # 如果日志状态为 False，则显示关闭提示
+            logon_off = """日志关闭"""
+            message = self.fontstyle.color_font(text=logon_off,
+                                                display_type=7,
+                                                foreground_color=31,
+                                                backgroud_color=41)
+            print(message)
+        messagebox.showinfo("日志", logon_off)
 
     def my_quit(self):
         message = self.fontstyle.color_font(text="Bye",
@@ -480,7 +533,6 @@ class MyGui(Frame):
         self.frame_btn_row2.pack(side=TOP)
         self.frame_btn_row2.configure(bg=self.bg_color.value)
 
-
         '''第一部分用来生成31-16位的label和button'''
         pad = 0
         call_mode = 0  # 用来设置是否为第一组控件
@@ -563,7 +615,8 @@ class MyGui(Frame):
                                     background='#f0f0f0',
                                     width=40,
                                     font=("宋体", 12, "bold"))
-        self.decimal_output.bind('<Return>', func=self.update_dec_btn_val_by_entry)
+        self.decimal_output.bind(
+            '<Return>', func=self.update_dec_btn_val_by_entry)
         self.decimal_output.bind('<Escape>', func=self.bit_reset)
         self.decimal_output.pack(side=TOP)
 
@@ -665,7 +718,7 @@ class MyGui(Frame):
         self.calc_btn_frame = Frame(self.frame_choice)
         self.add_btn = Button(self.calc_btn_frame,
                               background=self.btn_color.value,
-                              text="+",width=3, height=1)
+                              text="+", width=3, height=1)
         self.add_btn.config(command=self.calc_add)
         self.add_btn.pack(side=LEFT)
         self.calc_btn_frame.pack(side=TOP)
@@ -673,30 +726,28 @@ class MyGui(Frame):
         # "-"
         self.sub_btn = Button(self.calc_btn_frame,
                               background=self.btn_color.value,
-                              text="-",width=3, height=1)
+                              text="-", width=3, height=1)
         self.sub_btn.config(command=self.calc_sub)
         self.sub_btn.pack(side=LEFT)
 
-
         # "*"
         self.multi_btn = Button(self.calc_btn_frame,
-                              background=self.btn_color.value,
-                              text="*",width=3, height=1)
+                                background=self.btn_color.value,
+                                text="*", width=3, height=1)
         self.multi_btn.config(command=self.calc_multi)
         self.multi_btn.pack(side=LEFT)
-
 
         # "/"
         self.div_btn = Button(self.calc_btn_frame,
                               background=self.btn_color.value,
-                              text="/",width=3, height=1)
+                              text="/", width=3, height=1)
         self.div_btn.config(command=self.calc_div)
         self.div_btn.pack(side=LEFT)
 
         # "="
         self.div_btn = Button(self.calc_btn_frame,
                               background=self.btn_color.value,
-                              text="=",width=3, height=1)
+                              text="=", width=3, height=1)
         self.div_btn.config(command=self.calc_equal)
         self.div_btn.pack(side=LEFT)
 
@@ -741,13 +792,13 @@ class MyGui(Frame):
         self.decimal_output.insert(0, '0')
         self.octal_output.insert(0, '0o0')
         self.binary_output['state'] = 'normal'
-        self.binary_output.insert(0, '0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000')
+        self.binary_output.insert(
+            0, '0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000')
         self.binary_output['state'] = 'readonly'
 
         self.entry_hex_shift_set.insert(0, '0')
         self.entry_hex_shift_clear.insert(0, '0')
         self.binary_output['state'] = 'readonly'
-
     '''
         数据清除函数
     '''
@@ -846,11 +897,13 @@ class MyGui(Frame):
         if len_current_value_dict == 1:
             for pkey in current_value_dict:
                 current_hex_value = hex(int(current_value_dict[pkey], 2))
-                current_value_str += '({0}<<{1})'.format(current_hex_value, pkey * 4)
+                current_value_str += '({0}<<{1})'.format(
+                    current_hex_value, pkey * 4)
         elif len_current_value_dict > 1:
             for pkey in current_value_dict:
                 current_hex_value = hex(int(current_value_dict[pkey], 2))
-                current_value_str += '|({0}<<{1})'.format(current_hex_value, pkey * 4)
+                current_value_str += '|({0}<<{1})'.format(
+                    current_hex_value, pkey * 4)
             current_value_str = current_value_str[1:]
         else:
             pass
@@ -992,7 +1045,7 @@ class MyGui(Frame):
     # 计算表达式的函数
     def evaluate_expression(self):
         self.expres = self.decimal_output.get()
-        print(str(sys._getframe().f_lineno) + " expres:" + self.expres)
+        print(str(sys._getframe().f_lineno) + ": expres:" + self.expres)
         ret = 0
         try:
             ret = int(str(int(eval(self.expres))))
@@ -1021,8 +1074,11 @@ class MyGui(Frame):
         if int(_bin) == 0:
             return
         _dec = int(_bin, 2)
+        print(str(sys._getframe().f_lineno) +
+              ": _dec:{} expression:{}".format(_dec, self.expression))
         self.expression += _dec
-        print(str(sys._getframe().f_lineno) + "\"+\" expression: " + str(self.expression) + " _bin: " + _bin)
+        print(str(sys._getframe().f_lineno) + ": \"+\" expression: " +
+              str(self.expression) + " _bin: " + _bin)
         self.update_btn_style()
         self.show_data()
     '''
@@ -1038,8 +1094,11 @@ class MyGui(Frame):
         if int(_bin) == 0:
             return
         _dec = int(_bin, 2)
+        print(str(sys._getframe().f_lineno) +
+              ": _dec:{} expression:{}".format(_dec, self.expression))
         self.expression = _dec - self.expression
-        print(str(sys._getframe().f_lineno) + "\"-\" expression: " + str(self.expression) + " _bin: " + _bin)
+        print(str(sys._getframe().f_lineno) + ": \"-\" expression: " +
+              str(self.expression) + " _bin: " + _bin)
         self.update_btn_style()
         self.show_data()
     '''
@@ -1055,8 +1114,11 @@ class MyGui(Frame):
         if int(_bin) == 0:
             return
         _dec = int(_bin, 2)
-        self.expression *= _dec
-        print( str(sys._getframe().f_lineno) + "\"*\" expression: " + str(self.expression) + " _bin: " + _bin)
+        print(str(sys._getframe().f_lineno) +
+              ": _dec:{} expression:{}".format(_dec, self.expression))
+        self.expression = _dec
+        print(str(sys._getframe().f_lineno) + ": \"*\" expression: " +
+              str(self.expression) + " _bin: " + _bin)
         self.update_btn_style()
         self.show_data()
     '''
@@ -1073,7 +1135,8 @@ class MyGui(Frame):
             return
         _dec = int(_bin, 2)
         self.expression = _dec
-        print(str(sys._getframe().f_lineno) + "\"/\" expression: " + str(self.expression) + " _dec: " + str(_dec))
+        print(str(sys._getframe().f_lineno) + ": \"/\" expression: " +
+              str(self.expression) + " _dec: " + str(_dec))
         self.update_btn_style()
         self.show_data()
     '''
@@ -1083,7 +1146,8 @@ class MyGui(Frame):
     def calc_equal(self):
         self.calc_equal = 1
         self.expression = self.evaluate_expression()
-        print(str(sys._getframe().f_lineno) + " expression: " + str(self.expression))
+        print(str(sys._getframe().f_lineno) +
+              ": expression: " + str(self.expression))
         self.update_btn_style()
         self.show_data()
         self.calc_equal = 0
