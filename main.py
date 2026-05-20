@@ -622,24 +622,46 @@ class MyGui(Frame):
 
         self.pro_btn_frame.pack(side=TOP)
 
-        # 数据大小，单位KB
-        self.frame_data_size = Frame(self.frame_choice)
-        self.label_bin_size = Label(self.frame_data_size,
-                                    background=self.bg_color.value,
-                                    text="数据大小",
-                                    font=("宋体", 9, "bold"))
-        self.label_bin_size.pack(side=LEFT)
-        self.entry_bin_size = Entry(self.frame_data_size,
-                                    background='#f0f0f0',
-                                    width=10,
-                                    font=("宋体", 12, "bold"))
+        # 单位换算输入区：输入数值 + 选择单位 -> 写入寄存器
+        self.frame_unit_input = Frame(self.frame_choice)
+        self.label_unit_input = Label(self.frame_unit_input,
+                                      background=self.bg_color.value,
+                                      text="单位换算",
+                                      font=("宋体", 9, "bold"))
+        self.label_unit_input.pack(side=LEFT)
+        self.entry_unit_value = Entry(self.frame_unit_input,
+                                      background='#f0f0f0',
+                                      width=12,
+                                      font=("宋体", 12, "bold"))
+        self.entry_unit_value.bind('<Return>', func=self.convert_unit_to_register)
+        self.entry_unit_value.pack(side=LEFT)
+        self.unit_var = StringVar()
+        self.unit_var.set(_calc.CalcEngine.UNITS[0])
+        self.option_unit = OptionMenu(self.frame_unit_input, self.unit_var,
+                                      *_calc.CalcEngine.UNITS,
+                                      command=self.convert_unit_to_register)
+        self.option_unit.config(background=self.btn_color.value)
+        self.option_unit.pack(side=LEFT)
+        self.frame_unit_input.configure(bg=self.bg_color.value)
+        self.frame_unit_input.pack(side=TOP, pady=5)
 
-        self.entry_bin_size.pack(side=LEFT)
-        self.label_unit_size = Label(self.frame_data_size,
-                                     background=self.bg_color.value,
-                                     text="bits",
-                                     font=("宋体", 9, "bold"))
-        self.label_unit_size.pack(side=LEFT)
+        # 多单位只读显示区：展示当前寄存器值（字节数）对应的各单位
+        self.frame_data_size = Frame(self.frame_choice)
+        self.size_entries = {}
+        for unit in _calc.CalcEngine.UNITS:
+            row = Frame(self.frame_data_size)
+            lbl = Label(row, background=self.bg_color.value,
+                        text=unit, width=4, anchor='e',
+                        font=("宋体", 9, "bold"))
+            lbl.pack(side=LEFT)
+            ent = Entry(row, background='#f0f0f0', width=22,
+                        font=("宋体", 11, "bold"))
+            ent.pack(side=LEFT)
+            ent.insert(0, '0')
+            ent['state'] = 'readonly'
+            row.configure(bg=self.bg_color.value)
+            row.pack(side=TOP, anchor='e')
+            self.size_entries[unit] = ent
         self.frame_data_size.configure(bg=self.bg_color.value)
         self.frame_data_size.pack(side=TOP, pady=5, anchor='e')
         # 复选框区域打包
@@ -685,7 +707,10 @@ class MyGui(Frame):
 
         self.entry_hex_shift_set.delete(0, END)
         self.entry_hex_shift_clear.delete(0, END)
-        self.entry_bin_size.delete(0, END)
+        for ent in self.size_entries.values():
+            ent['state'] = 'normal'
+            ent.delete(0, END)
+            ent['state'] = 'readonly'
         self.binary_output['state'] = 'readonly'
 
     '''
@@ -789,32 +814,13 @@ class MyGui(Frame):
         self.entry_hex_shift_set.insert(0, current_value_str)
         self.entry_hex_shift_clear.insert(0, not_hex)
 
-        # 这里要注意，如果将十进制数据进行大小计算，需要在原数据上+1
-        this_dec = dec
-        result = 0
-        # 一些单位换算，后期可以独立出来作为功能甘薯
-        if this_dec < 8:
-            result = this_dec
-            self.label_unit_size['text'] = "bits"
-        elif this_dec >= 8 and this_dec < 1024:
-            result = this_dec / 8
-            self.label_unit_size['text'] = "Byte"
-        elif this_dec >= 1024 and this_dec < 0x100000:
-            result = this_dec / 1024
-            self.label_unit_size['text'] = "KByte"
-        elif this_dec >= 0x100000 and this_dec < 0x40000000:
-            result = this_dec / 0x100000
-            self.label_unit_size['text'] = "MByte"
-        elif this_dec >= 0x40000000 and this_dec < 0x10000000000:
-            this_dec = dec + 1
-            result = this_dec / 0x40000000
-            self.label_unit_size['text'] = "GByte"
-        else:
-            this_dec = dec + 1
-            result = this_dec / 0x10000000000
-            self.label_unit_size['text'] = "TByte"
-
-        self.entry_bin_size.insert(0, result)
+        # 数据大小：寄存器值视为字节数，同时显示各单位（只读）
+        units = self.calc.bytes_to_units(dec)
+        for unit, entry in self.size_entries.items():
+            entry['state'] = 'normal'
+            entry.delete(0, END)
+            entry.insert(0, units[unit])
+            entry['state'] = 'readonly'
         self.binary_output['state'] = 'readonly'  # 将二进制回显区设置为只读
 
     '''
@@ -1064,10 +1070,15 @@ class MyGui(Frame):
             # checkbox背景颜色更换
             self.ck_btn.config(bg=self.bg_color.value)
 
-            # 数据大小背景色更换
+            # 数据大小/单位换算背景色更换
+            self.frame_unit_input.config(bg=self.bg_color.value)
+            self.label_unit_input.config(bg=self.bg_color.value)
             self.frame_data_size.config(bg=self.bg_color.value)
-            self.label_bin_size.config(bg=self.bg_color.value)
-            self.label_unit_size.config(bg=self.bg_color.value)
+            for unit_row in self.frame_data_size.winfo_children():
+                unit_row.config(bg=self.bg_color.value)
+                for child in unit_row.winfo_children():
+                    if isinstance(child, Label):
+                        child.config(bg=self.bg_color.value)
 
             return err
         except:
