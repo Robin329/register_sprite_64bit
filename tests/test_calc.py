@@ -62,5 +62,37 @@ class TestSafeEval(unittest.TestCase):
             self.calc.safe_eval("1/0")
 
 
+class TestUnitToBytes(unittest.TestCase):
+    def setUp(self):
+        self.calc = CalcEngine()
+
+    def test_mb(self):
+        self.assertEqual(self.calc.unit_to_bytes(4, 'MB'), 4194304)
+
+    def test_kb(self):
+        self.assertEqual(self.calc.unit_to_bytes(1, 'KB'), 1024)
+
+    def test_zero(self):
+        self.assertEqual(self.calc.unit_to_bytes(0, 'B'), 0)
+
+    def test_fraction_kb(self):
+        self.assertEqual(self.calc.unit_to_bytes(0.5, 'KB'), 512)
+
+    def test_gb(self):
+        self.assertEqual(self.calc.unit_to_bytes(1, 'GB'), 1073741824)
+
+    def test_unknown_unit(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes(1, 'PB')
+
+    def test_overflow(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes(10 ** 20, 'B')
+
+    def test_bad_value(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes("abc", 'MB')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -28,6 +28,7 @@ import operator
 
 class CalcEngine():
     MAX_U64 = 2 ** 64 - 1
+    UNITS = ['B', 'KB', 'MB', 'GB', 'TB']   # 第 idx 个单位 = 1024**idx 字节
 
     # 允许的二元运算符 -> 实现（禁用 ** 幂运算，避免巨数 DoS）
     _BIN_OPS = {
@@ -84,6 +85,22 @@ class CalcEngine():
         if result > self.MAX_U64:
             raise ValueError("结果超出 64 位范围")
         return result
+
+    def unit_to_bytes(self, value, unit):
+        '''数值 + 单位 -> 字节数（向零截断），未知单位/无效数值/越界抛 ValueError'''
+        if unit not in self.UNITS:
+            raise ValueError("未知单位")
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            raise ValueError("无效数值")
+        idx = self.UNITS.index(unit)
+        bytes_ = int(value * (1024 ** idx))
+        if bytes_ < 0:
+            raise ValueError("结果不能为负")
+        if bytes_ > self.MAX_U64:
+            raise ValueError("结果超出 64 位范围")
+        return bytes_
 
 
 def main():
