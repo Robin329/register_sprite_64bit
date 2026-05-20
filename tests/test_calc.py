@@ -1,0 +1,125 @@
+import os
+import sys
+import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from lib._calc import CalcEngine
+
+
+class TestSafeEval(unittest.TestCase):
+    def setUp(self):
+        self.calc = CalcEngine()
+
+    def test_complex_expression(self):
+        self.assertEqual(self.calc.safe_eval("(10+100)*20*(50/10)"), 11000)
+
+    def test_true_division_truncates(self):
+        self.assertEqual(self.calc.safe_eval("7/2"), 3)
+
+    def test_nested_parens(self):
+        self.assertEqual(self.calc.safe_eval("(2+3)*4"), 20)
+
+    def test_negative_intermediate_ok(self):
+        self.assertEqual(self.calc.safe_eval("(5-3)*10"), 20)
+
+    def test_zero(self):
+        self.assertEqual(self.calc.safe_eval("0"), 0)
+
+    def test_max_u64(self):
+        self.assertEqual(self.calc.safe_eval("18446744073709551615"), 2 ** 64 - 1)
+
+    def test_overflow_raises(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("18446744073709551616")
+
+    def test_negative_result_raises(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("5-10")
+
+    def test_negative_float_result_raises(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("1/3 - 1")
+
+    def test_name_rejected(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("a+1")
+
+    def test_call_rejected(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("__import__('os')")
+
+    def test_pow_rejected(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("2**8")
+
+    def test_empty_rejected(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("")
+
+    def test_divzero_rejected(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("1/0")
+
+
+class TestUnitToBytes(unittest.TestCase):
+    def setUp(self):
+        self.calc = CalcEngine()
+
+    def test_mb(self):
+        self.assertEqual(self.calc.unit_to_bytes(4, 'MB'), 4194304)
+
+    def test_kb(self):
+        self.assertEqual(self.calc.unit_to_bytes(1, 'KB'), 1024)
+
+    def test_zero(self):
+        self.assertEqual(self.calc.unit_to_bytes(0, 'B'), 0)
+
+    def test_fraction_kb(self):
+        self.assertEqual(self.calc.unit_to_bytes(0.5, 'KB'), 512)
+
+    def test_gb(self):
+        self.assertEqual(self.calc.unit_to_bytes(1, 'GB'), 1073741824)
+
+    def test_unknown_unit(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes(1, 'PB')
+
+    def test_overflow(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes(10 ** 20, 'B')
+
+    def test_bad_value(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes("abc", 'MB')
+
+    def test_negative_value(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes(-1, 'KB')
+
+    def test_inf_value(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes(float('inf'), 'GB')
+
+
+class TestBytesToUnits(unittest.TestCase):
+    def setUp(self):
+        self.calc = CalcEngine()
+
+    def test_b(self):
+        u = self.calc.bytes_to_units(4194304)
+        self.assertEqual(u['B'], '4194304')
+
+    def test_kb_mb(self):
+        u = self.calc.bytes_to_units(4194304)
+        self.assertEqual(float(u['KB']), 4096)
+        self.assertEqual(float(u['MB']), 4)
+
+    def test_keys(self):
+        u = self.calc.bytes_to_units(0)
+        self.assertEqual(set(u.keys()), {'B', 'KB', 'MB', 'GB', 'TB'})
+        self.assertEqual(u['B'], '0')
+
+
+if __name__ == '__main__':
+    unittest.main()

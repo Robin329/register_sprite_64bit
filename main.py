@@ -49,6 +49,7 @@ https://github.com/Robin329/register_sprite_64bit
 from lib import _file_operations
 from lib import _debug
 from lib import _color_operations
+from lib import _calc
 from tkinter import messagebox
 import os
 import sys
@@ -65,144 +66,50 @@ class MyGui(Frame):
         def __init__(self, name, value):
             self.name = name
             self.value = value
-    # 类里面定义全局变量
-    expression = 0
-    calc_add = 0
-    calc_sub = 0
-    calc_multi = 0
-    calc_div = 0
-    calc_equal = 0
-    expres = ""
-
     # event start ***************************************************
-    # 10进制Entry回车事件处理函数
+    # 将一个整数写入 64 个位按钮（高位在前，btn_list[0] 为 bit63）
+    def set_register_bits(self, value):
+        value = int(value) & ((1 << 64) - 1)
+        str_bin_data = format(value, '064b')
+        for idx, btn in enumerate(self.btn_list):
+            btn['text'] = str_bin_data[idx]
+        self.update_btn_style()
+
+    # 10进制Entry回车事件处理函数：对输入做安全表达式求值
     def update_dec_btn_val_by_entry(self, event):
-        origin_decimal_data = self.decimal_output.get()
-        origin_decimal_data = str(int(eval(origin_decimal_data)))
-        # 数据处理
-        # 16进制转10进制
-        if self.calc_add == 1:
-            self.expression += int(origin_decimal_data)
-            origin_decimal_data = str(self.expression)
-            self.calc_add = 0
-
-        if self.calc_sub == 1:
-            self.expression -= int(origin_decimal_data)
-            origin_decimal_data = str(self.expression)
-            self.calc_sub = 0
-
-        if self.calc_multi == 1:
-            self.expression *= int(origin_decimal_data)
-            origin_decimal_data = str(self.expression)
-            self.calc_multi = 0
-
-        if self.calc_div == 1:
-            self.expression //= int(origin_decimal_data)
-            origin_decimal_data = str(self.expression)
-            self.calc_div = 0
-
-        print(str(sys._getframe().f_lineno) + ": expression:" +
-              str(self.expression) + "  origin_decimal_data:" + origin_decimal_data)
-        hex_data = hex(int(origin_decimal_data))
-        dec_data = 0
-        weight = len(hex_data) - 1  # 权
-        # 遍历十六进制数据各位（从左边开始）,递减权重
-        for bit in hex_data:
-            # 判断数据有效性，累加十进制数据
-            if bit in list(self.upper_str_hex_after9) or bit in list(self.upper_str_hex_after9.lower()):
-                dec_data += self.dict_hex_after9[bit] * pow(16, weight)
-            else:
-                # 打印错误信息
-                print(self.fontstyle.color_font(
-                    "ERROR, Unrecognized HEX <{}> From User Input!", 7, 63, 40).format(bit))
-
-            weight -= 1
-
-        # 获取数据二进制字符串
-        dec_data = int(dec_data)
-        dec_data = int(dec_data)
-        str_bin_data = str(bin(dec_data))[2:]
-
-        # 设置按钮位
-        btn_cnt = 64
-        data_length = len(str_bin_data)
-        for btn in self.btn_list:
-            if btn_cnt > data_length:
-                btn['text'] = '0'
-                btn_cnt -= 1
-                continue
-            btn['text'] = str_bin_data[0]
-            str_bin_data = str_bin_data[1:]
-
-        # 更新样式以及数据
-        self.update_btn_style()
+        try:
+            value = self.calc.safe_eval(self.decimal_output.get())
+        except ValueError as e:
+            messagebox.showerror("错误", str(e))
+            return
+        self.set_register_bits(value)
         self.show_data()
-        self.expression = 0
+
+    # 单位换算输入处理：数值 + 单位 -> 字节数 -> 写入寄存器
+    def convert_unit_to_register(self, event=None):
+        try:
+            bytes_ = self.calc.unit_to_bytes(
+                self.entry_unit_value.get(), self.unit_var.get())
+        except ValueError as e:
+            messagebox.showerror("错误", str(e))
+            return
+        self.set_register_bits(bytes_)
+        self.show_data()
+
     # 16进制Entry回车事件处理函数
-
     def update_btn_val_by_entry(self, event):
-        origin_data = self.hex_output.get()
-        # 尝试去除0x前缀
-        if origin_data[0:2] == "0x":
+        origin_data = self.hex_output.get().strip()
+        if origin_data[0:2].lower() == "0x":
             origin_data = origin_data[2:]
-
-        # 数据处理
-        # 16进制转10进制
-        if self.calc_add == 1:
-            self.expression += int(origin_data)
-            origin_data = str(self.expression)
-            self.calc_add = 0
-
-        if self.calc_sub == 1:
-            self.expression -= int(origin_data)
-            origin_data = str(self.expression)
-            self.calc_sub = 0
-
-        if self.calc_multi == 1:
-            self.expression *= int(origin_data)
-            origin_data = str(self.expression)
-            self.calc_multi = 0
-
-        if self.calc_div == 1:
-            self.expression //= int(origin_data)
-            origin_data = str(self.expression)
-            self.calc_div = 0
-
-        hex_data = origin_data
-        dec_data = 0
-        weight = len(hex_data) - 1  # 权
-        # 遍历十六进制数据各位（从左边开始）,递减权重
-        for bit in hex_data:
-            # 判断数据有效性，累加十进制数据
-            if bit in list(self.upper_str_hex_after9) or bit in list(self.upper_str_hex_after9.lower()):
-                dec_data += self.dict_hex_after9[bit] * pow(16, weight)
-            else:
-                # 打印错误信息
-                print(self.fontstyle.color_font(
-                    "ERROR, Unrecognized HEX <{}> From User Input!", 7, 63, 40).format(bit))
-
-            weight -= 1
-
-        # 获取数据二进制字符串
-        dec_data = int(dec_data)
-        dec_data = int(dec_data)
-        str_bin_data = str(bin(dec_data))[2:]
-
-        # 设置按钮位
-        btn_cnt = 64
-        data_length = len(str_bin_data)
-        for btn in self.btn_list:
-            if btn_cnt > data_length:
-                btn['text'] = '0'
-                btn_cnt -= 1
-                continue
-            btn['text'] = str_bin_data[0]
-            str_bin_data = str_bin_data[1:]
-
-        # 更新样式以及数据
-        self.update_btn_style()
+        try:
+            value = int(origin_data, 16)
+            if value < 0 or value > self.calc.MAX_U64:
+                raise ValueError
+        except ValueError:
+            messagebox.showerror("错误", "无效的 16 进制输入")
+            return
+        self.set_register_bits(value)
         self.show_data()
-        self.expression = 0
 
     # event end ***************************************************
 
@@ -220,6 +127,7 @@ class MyGui(Frame):
         self.path_user_config = r'./user-config.ini'  # 用户配置文件路径
         self.fops = _file_operations.FileOperations()  # 配置文件操作
         self.fontstyle = _color_operations.FontStyle()  # 终端打印样式
+        self.calc = _calc.CalcEngine()  # 计算/单位换算引擎
 
         self.lbl_list = []  # 按钮上label列表
         self.btn_list = []  # 位按钮列表
@@ -714,61 +622,46 @@ class MyGui(Frame):
 
         self.pro_btn_frame.pack(side=TOP)
 
-        # "+"
-        self.calc_btn_frame = Frame(self.frame_choice)
-        self.add_btn = Button(self.calc_btn_frame,
-                              background=self.btn_color.value,
-                              text="+", width=3, height=1)
-        self.add_btn.config(command=self.calc_add)
-        self.add_btn.pack(side=LEFT)
-        self.calc_btn_frame.pack(side=TOP)
+        # 单位换算输入区：输入数值 + 选择单位 -> 写入寄存器
+        self.frame_unit_input = Frame(self.frame_choice)
+        self.label_unit_input = Label(self.frame_unit_input,
+                                      background=self.bg_color.value,
+                                      text="单位换算",
+                                      font=("宋体", 9, "bold"))
+        self.label_unit_input.pack(side=LEFT)
+        self.entry_unit_value = Entry(self.frame_unit_input,
+                                      background='#f0f0f0',
+                                      width=12,
+                                      font=("宋体", 12, "bold"))
+        self.entry_unit_value.bind('<Return>', func=self.convert_unit_to_register)
+        self.entry_unit_value.pack(side=LEFT)
+        self.unit_var = StringVar()
+        self.unit_var.set(_calc.CalcEngine.UNITS[0])
+        self.option_unit = OptionMenu(self.frame_unit_input, self.unit_var,
+                                      *_calc.CalcEngine.UNITS,
+                                      command=self.convert_unit_to_register)
+        self.option_unit.config(background=self.btn_color.value)
+        self.option_unit.pack(side=LEFT)
+        self.frame_unit_input.configure(bg=self.bg_color.value)
+        self.frame_unit_input.pack(side=TOP, pady=5)
 
-        # "-"
-        self.sub_btn = Button(self.calc_btn_frame,
-                              background=self.btn_color.value,
-                              text="-", width=3, height=1)
-        self.sub_btn.config(command=self.calc_sub)
-        self.sub_btn.pack(side=LEFT)
-
-        # "*"
-        self.multi_btn = Button(self.calc_btn_frame,
-                                background=self.btn_color.value,
-                                text="*", width=3, height=1)
-        self.multi_btn.config(command=self.calc_multi)
-        self.multi_btn.pack(side=LEFT)
-
-        # "/"
-        self.div_btn = Button(self.calc_btn_frame,
-                              background=self.btn_color.value,
-                              text="/", width=3, height=1)
-        self.div_btn.config(command=self.calc_div)
-        self.div_btn.pack(side=LEFT)
-
-        # "="
-        self.div_btn = Button(self.calc_btn_frame,
-                              background=self.btn_color.value,
-                              text="=", width=3, height=1)
-        self.div_btn.config(command=self.calc_equal)
-        self.div_btn.pack(side=LEFT)
-
-        # 数据大小，单位KB
+        # 多单位只读显示区：展示当前寄存器值（字节数）对应的各单位
         self.frame_data_size = Frame(self.frame_choice)
-        self.label_bin_size = Label(self.frame_data_size,
-                                    background=self.bg_color.value,
-                                    text="数据大小",
-                                    font=("宋体", 9, "bold"))
-        self.label_bin_size.pack(side=LEFT)
-        self.entry_bin_size = Entry(self.frame_data_size,
-                                    background='#f0f0f0',
-                                    width=10,
-                                    font=("宋体", 12, "bold"))
-
-        self.entry_bin_size.pack(side=LEFT)
-        self.label_unit_size = Label(self.frame_data_size,
-                                     background=self.bg_color.value,
-                                     text="bits",
-                                     font=("宋体", 9, "bold"))
-        self.label_unit_size.pack(side=LEFT)
+        self.size_entries = {}
+        for unit in _calc.CalcEngine.UNITS:
+            row = Frame(self.frame_data_size)
+            lbl = Label(row, background=self.bg_color.value,
+                        text=unit, width=4, anchor='e',
+                        font=("宋体", 9, "bold"))
+            lbl.pack(side=LEFT)
+            ent = Entry(row, background='#f0f0f0', width=22,
+                        font=("宋体", 11, "bold"))
+            ent.pack(side=LEFT)
+            ent.insert(0, '0')
+            ent['state'] = 'readonly'
+            row.configure(bg=self.bg_color.value)
+            row.pack(side=TOP, anchor='e')
+            self.size_entries[unit] = ent
         self.frame_data_size.configure(bg=self.bg_color.value)
         self.frame_data_size.pack(side=TOP, pady=5, anchor='e')
         # 复选框区域打包
@@ -814,7 +707,10 @@ class MyGui(Frame):
 
         self.entry_hex_shift_set.delete(0, END)
         self.entry_hex_shift_clear.delete(0, END)
-        self.entry_bin_size.delete(0, END)
+        for ent in self.size_entries.values():
+            ent['state'] = 'normal'
+            ent.delete(0, END)
+            ent['state'] = 'readonly'
         self.binary_output['state'] = 'readonly'
 
     '''
@@ -836,10 +732,6 @@ class MyGui(Frame):
 
         # 进制转换
         dec = int(_bin, 2)
-        if self.calc_equal == 1:
-            dec = self.expression
-            print("dec: %d" % dec)
-            print(f"dec: {dec}")
         not_dec = int(not_bin, 2)
         _hex = hex(dec)
         not_hex = hex(not_dec)
@@ -922,32 +814,13 @@ class MyGui(Frame):
         self.entry_hex_shift_set.insert(0, current_value_str)
         self.entry_hex_shift_clear.insert(0, not_hex)
 
-        # 这里要注意，如果将十进制数据进行大小计算，需要在原数据上+1
-        this_dec = dec
-        result = 0
-        # 一些单位换算，后期可以独立出来作为功能甘薯
-        if this_dec < 8:
-            result = this_dec
-            self.label_unit_size['text'] = "bits"
-        elif this_dec >= 8 and this_dec < 1024:
-            result = this_dec / 8
-            self.label_unit_size['text'] = "Byte"
-        elif this_dec >= 1024 and this_dec < 0x100000:
-            result = this_dec / 1024
-            self.label_unit_size['text'] = "KByte"
-        elif this_dec >= 0x100000 and this_dec < 0x40000000:
-            result = this_dec / 0x100000
-            self.label_unit_size['text'] = "MByte"
-        elif this_dec >= 0x40000000 and this_dec < 0x10000000000:
-            this_dec = dec + 1
-            result = this_dec / 0x40000000
-            self.label_unit_size['text'] = "GByte"
-        else:
-            this_dec = dec + 1
-            result = this_dec / 0x10000000000
-            self.label_unit_size['text'] = "TByte"
-
-        self.entry_bin_size.insert(0, result)
+        # 数据大小：寄存器值视为字节数，同时显示各单位（只读）
+        units = self.calc.bytes_to_units(dec)
+        for unit, entry in self.size_entries.items():
+            entry['state'] = 'normal'
+            entry.delete(0, END)
+            entry.insert(0, units[unit])
+            entry['state'] = 'readonly'
         self.binary_output['state'] = 'readonly'  # 将二进制回显区设置为只读
 
     '''
@@ -1042,115 +915,6 @@ class MyGui(Frame):
         self.init_value()  # 初始化数据
         # self.show_data()
 
-    # 计算表达式的函数
-    def evaluate_expression(self):
-        self.expres = self.decimal_output.get()
-        print(str(sys._getframe().f_lineno) + ": expres:" + self.expres)
-        ret = 0
-        try:
-            ret = int(str(int(eval(self.expres))))
-            self.expres = ""
-        except:
-            self.expres = ""
-            raise Exception("Invalid expression")
-        return ret
-
-    # 清除表达式的函数
-    @_debug.printk()
-    def clear_expression(self):
-        self.expres = ""
-
-    '''
-        计算器加功能函数
-    '''
-    # 计算表达式的函数
-    @_debug.printk()
-    def calc_add(self):
-        self.calc_add = 1
-        # 得到二进制数据
-        _bin = self.get_bin_value(mode='normal')
-
-        # 判断数据是否有效
-        if int(_bin) == 0:
-            return
-        _dec = int(_bin, 2)
-        print(str(sys._getframe().f_lineno) +
-              ": _dec:{} expression:{}".format(_dec, self.expression))
-        self.expression += _dec
-        print(str(sys._getframe().f_lineno) + ": \"+\" expression: " +
-              str(self.expression) + " _bin: " + _bin)
-        self.update_btn_style()
-        self.show_data()
-    '''
-        计算器减功能函数
-    '''
-    @_debug.printk()
-    def calc_sub(self):
-        self.calc_sub = 1
-        # 得到二进制数据
-        _bin = self.get_bin_value(mode='normal')
-
-        # 判断数据是否有效
-        if int(_bin) == 0:
-            return
-        _dec = int(_bin, 2)
-        print(str(sys._getframe().f_lineno) +
-              ": _dec:{} expression:{}".format(_dec, self.expression))
-        self.expression = _dec - self.expression
-        print(str(sys._getframe().f_lineno) + ": \"-\" expression: " +
-              str(self.expression) + " _bin: " + _bin)
-        self.update_btn_style()
-        self.show_data()
-    '''
-        计算器乘功能函数
-    '''
-    @_debug.printk()
-    def calc_multi(self):
-        self.calc_multi = 1
-        # 得到二进制数据
-        _bin = self.get_bin_value(mode='normal')
-
-        # 判断数据是否有效
-        if int(_bin) == 0:
-            return
-        _dec = int(_bin, 2)
-        print(str(sys._getframe().f_lineno) +
-              ": _dec:{} expression:{}".format(_dec, self.expression))
-        self.expression = _dec
-        print(str(sys._getframe().f_lineno) + ": \"*\" expression: " +
-              str(self.expression) + " _bin: " + _bin)
-        self.update_btn_style()
-        self.show_data()
-    '''
-        计算器除功能函数
-    '''
-    @_debug.printk()
-    def calc_div(self):
-        self.calc_div = 1
-        # 得到二进制数据
-        _bin = self.get_bin_value(mode='normal')
-
-        # 判断数据是否有效
-        if int(_bin) == 0:
-            return
-        _dec = int(_bin, 2)
-        self.expression = _dec
-        print(str(sys._getframe().f_lineno) + ": \"/\" expression: " +
-              str(self.expression) + " _dec: " + str(_dec))
-        self.update_btn_style()
-        self.show_data()
-    '''
-        计算器等于功能函数
-    '''
-    @_debug.printk()
-    def calc_equal(self):
-        self.calc_equal = 1
-        self.expression = self.evaluate_expression()
-        print(str(sys._getframe().f_lineno) +
-              ": expression: " + str(self.expression))
-        self.update_btn_style()
-        self.show_data()
-        self.calc_equal = 0
     '''
         求非功能函数
     '''
@@ -1306,10 +1070,15 @@ class MyGui(Frame):
             # checkbox背景颜色更换
             self.ck_btn.config(bg=self.bg_color.value)
 
-            # 数据大小背景色更换
+            # 数据大小/单位换算背景色更换
+            self.frame_unit_input.config(bg=self.bg_color.value)
+            self.label_unit_input.config(bg=self.bg_color.value)
             self.frame_data_size.config(bg=self.bg_color.value)
-            self.label_bin_size.config(bg=self.bg_color.value)
-            self.label_unit_size.config(bg=self.bg_color.value)
+            for unit_row in self.frame_data_size.winfo_children():
+                unit_row.config(bg=self.bg_color.value)
+                for child in unit_row.winfo_children():
+                    if isinstance(child, Label):
+                        child.config(bg=self.bg_color.value)
 
             return err
         except:
