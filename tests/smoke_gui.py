@@ -18,17 +18,25 @@ def main():
     assert app.decimal_output.get() == "11000", \
         "expr eval failed: %r" % app.decimal_output.get()
 
-    # 2) 单位换算 4 MB -> 4194304 字节，并校验多单位显示
-    app.entry_unit_value.delete(0, tk.END)
-    app.entry_unit_value.insert(0, "4")
-    app.unit_var.set("MB")
-    app.convert_unit_to_register()
+    # 2) 在 MB 框直接输入 4 + 回车 -> 4194304 字节，并校验各单位框刷新
+    app.size_entries["MB"].delete(0, tk.END)
+    app.size_entries["MB"].insert(0, "4")
+    app.convert_size_entry("MB")
     assert app.decimal_output.get() == "4194304", \
         "unit convert failed: %r" % app.decimal_output.get()
     assert app.size_entries["MB"].get() == "4", \
         "MB display failed: %r" % app.size_entries["MB"].get()
     assert app.size_entries["KB"].get() == "4096", \
         "KB display failed: %r" % app.size_entries["KB"].get()
+
+    # 2b) 在 KB 框输入 2048 + 回车 -> 2097152 字节，MB 应显示 2
+    app.size_entries["KB"].delete(0, tk.END)
+    app.size_entries["KB"].insert(0, "2048")
+    app.convert_size_entry("KB")
+    assert app.decimal_output.get() == "2097152", \
+        "KB input failed: %r" % app.decimal_output.get()
+    assert app.size_entries["MB"].get() == "2", \
+        "MB after KB input failed: %r" % app.size_entries["MB"].get()
 
     # 3) 复位与背景色切换不应抛异常（验证无残留控件引用）
     app.bit_reset()

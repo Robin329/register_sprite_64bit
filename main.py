@@ -85,11 +85,11 @@ class MyGui(Frame):
         self.set_register_bits(value)
         self.show_data()
 
-    # 单位换算输入处理：数值 + 单位 -> 字节数 -> 写入寄存器
-    def convert_unit_to_register(self, event=None):
+    # 单位换算：在某个单位框输入数值并回车 -> 字节数 -> 写入寄存器
+    def convert_size_entry(self, unit, event=None):
         try:
             bytes_ = self.calc.unit_to_bytes(
-                self.entry_unit_value.get(), self.unit_var.get())
+                self.size_entries[unit].get(), unit)
         except ValueError as e:
             messagebox.showerror("错误", str(e))
             return
@@ -622,31 +622,13 @@ class MyGui(Frame):
 
         self.pro_btn_frame.pack(side=TOP)
 
-        # 单位换算输入区：输入数值 + 选择单位 -> 写入寄存器
-        self.frame_unit_input = Frame(self.frame_choice)
-        self.label_unit_input = Label(self.frame_unit_input,
-                                      background=self.bg_color.value,
-                                      text="单位换算",
-                                      font=("宋体", 9, "bold"))
-        self.label_unit_input.pack(side=LEFT)
-        self.entry_unit_value = Entry(self.frame_unit_input,
-                                      background='#f0f0f0',
-                                      width=12,
-                                      font=("宋体", 12, "bold"))
-        self.entry_unit_value.bind('<Return>', func=self.convert_unit_to_register)
-        self.entry_unit_value.pack(side=LEFT)
-        self.unit_var = StringVar()
-        self.unit_var.set(_calc.CalcEngine.UNITS[0])
-        self.option_unit = OptionMenu(self.frame_unit_input, self.unit_var,
-                                      *_calc.CalcEngine.UNITS,
-                                      command=self.convert_unit_to_register)
-        self.option_unit.config(background=self.btn_color.value)
-        self.option_unit.pack(side=LEFT)
-        self.frame_unit_input.configure(bg=self.bg_color.value)
-        self.frame_unit_input.pack(side=TOP, pady=5)
-
-        # 多单位只读显示区：展示当前寄存器值（字节数）对应的各单位
+        # 单位换算区：B/KB/MB/GB/TB 任一框均可直接输入，回车自动换算并刷新
         self.frame_data_size = Frame(self.frame_choice)
+        self.label_unit_input = Label(self.frame_data_size,
+                                      background=self.bg_color.value,
+                                      text="单位换算（输入后回车）",
+                                      font=("宋体", 9, "bold"))
+        self.label_unit_input.pack(side=TOP, pady=(0, 3))
         self.size_entries = {}
         for unit in _calc.CalcEngine.UNITS:
             row = Frame(self.frame_data_size)
@@ -658,7 +640,9 @@ class MyGui(Frame):
                         font=("宋体", 11, "bold"))
             ent.pack(side=LEFT)
             ent.insert(0, '0')
-            ent['state'] = 'readonly'
+            # 在该单位框回车 -> 按此单位换算（u=unit 锁定当前循环变量）
+            ent.bind('<Return>',
+                     lambda e, u=unit: self.convert_size_entry(u, e))
             row.configure(bg=self.bg_color.value)
             row.pack(side=TOP, anchor='e')
             self.size_entries[unit] = ent
@@ -708,9 +692,7 @@ class MyGui(Frame):
         self.entry_hex_shift_set.delete(0, END)
         self.entry_hex_shift_clear.delete(0, END)
         for ent in self.size_entries.values():
-            ent['state'] = 'normal'
             ent.delete(0, END)
-            ent['state'] = 'readonly'
         self.binary_output['state'] = 'readonly'
 
     '''
@@ -814,13 +796,11 @@ class MyGui(Frame):
         self.entry_hex_shift_set.insert(0, current_value_str)
         self.entry_hex_shift_clear.insert(0, not_hex)
 
-        # 数据大小：寄存器值视为字节数，同时显示各单位（只读）
+        # 数据大小：寄存器值视为字节数，同步刷新各单位输入框
         units = self.calc.bytes_to_units(dec)
         for unit, entry in self.size_entries.items():
-            entry['state'] = 'normal'
             entry.delete(0, END)
             entry.insert(0, units[unit])
-            entry['state'] = 'readonly'
         self.binary_output['state'] = 'readonly'  # 将二进制回显区设置为只读
 
     '''
@@ -1071,14 +1051,12 @@ class MyGui(Frame):
             self.ck_btn.config(bg=self.bg_color.value)
 
             # 数据大小/单位换算背景色更换
-            self.frame_unit_input.config(bg=self.bg_color.value)
-            self.label_unit_input.config(bg=self.bg_color.value)
             self.frame_data_size.config(bg=self.bg_color.value)
-            for unit_row in self.frame_data_size.winfo_children():
-                unit_row.config(bg=self.bg_color.value)
-                for child in unit_row.winfo_children():
-                    if isinstance(child, Label):
-                        child.config(bg=self.bg_color.value)
+            for child in self.frame_data_size.winfo_children():
+                child.config(bg=self.bg_color.value)
+                for sub in child.winfo_children():
+                    if isinstance(sub, Label):
+                        sub.config(bg=self.bg_color.value)
 
             return err
         except:
