@@ -23,6 +23,7 @@
 '''
 
 import ast
+import math
 import operator
 
 
@@ -93,6 +94,8 @@ class CalcEngine():
         try:
             value = float(value)
         except (TypeError, ValueError):
+            raise ValueError("无效数值")
+        if not math.isfinite(value):   # 拒绝 inf/-inf/nan，统一为 ValueError
             raise ValueError("无效数值")
         idx = self.UNITS.index(unit)
         bytes_ = int(value * (1024 ** idx))

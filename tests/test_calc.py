@@ -93,6 +93,14 @@ class TestUnitToBytes(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.calc.unit_to_bytes("abc", 'MB')
 
+    def test_negative_value(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes(-1, 'KB')
+
+    def test_inf_value(self):
+        with self.assertRaises(ValueError):
+            self.calc.unit_to_bytes(float('inf'), 'GB')
+
 
 if __name__ == '__main__':
     unittest.main()
