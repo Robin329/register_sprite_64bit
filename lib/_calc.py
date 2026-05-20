@@ -105,10 +105,23 @@ class CalcEngine():
             raise ValueError("结果超出 64 位范围")
         return bytes_
 
+    def bytes_to_units(self, n):
+        '''字节数 -> {单位: 已格式化字符串}，B 为整数，其余保留有效数字'''
+        n = int(n)
+        result = {}
+        for idx, unit in enumerate(self.UNITS):
+            if idx == 0:
+                result[unit] = str(n)
+            else:
+                result[unit] = "{:.6g}".format(n / (1024 ** idx))
+        return result
+
 
 def main():
     calc = CalcEngine()
     print(calc.safe_eval("(10+100)*20*(50/10)"))   # 11000
+    print(calc.unit_to_bytes(4, 'MB'))              # 4194304
+    print(calc.bytes_to_units(4194304))             # {'B': '4194304', ...}
 
 
 if __name__ == '__main__':

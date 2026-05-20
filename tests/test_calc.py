@@ -102,5 +102,24 @@ class TestUnitToBytes(unittest.TestCase):
             self.calc.unit_to_bytes(float('inf'), 'GB')
 
 
+class TestBytesToUnits(unittest.TestCase):
+    def setUp(self):
+        self.calc = CalcEngine()
+
+    def test_b(self):
+        u = self.calc.bytes_to_units(4194304)
+        self.assertEqual(u['B'], '4194304')
+
+    def test_kb_mb(self):
+        u = self.calc.bytes_to_units(4194304)
+        self.assertEqual(float(u['KB']), 4096)
+        self.assertEqual(float(u['MB']), 4)
+
+    def test_keys(self):
+        u = self.calc.bytes_to_units(0)
+        self.assertEqual(set(u.keys()), {'B', 'KB', 'MB', 'GB', 'TB'})
+        self.assertEqual(u['B'], '0')
+
+
 if __name__ == '__main__':
     unittest.main()
