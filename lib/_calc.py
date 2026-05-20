@@ -78,9 +78,9 @@ class CalcEngine():
         except SyntaxError:
             raise ValueError("表达式语法错误")
         value = self._eval_node(tree)
-        result = int(value)  # 最终向零截断取整
-        if result < 0:
+        if value < 0:                       # 在取整前判断，避免 (-1,0) 被截断为 0
             raise ValueError("结果不能为负")
+        result = int(value)  # 最终向零截断取整
         if result > self.MAX_U64:
             raise ValueError("结果超出 64 位范围")
         return result

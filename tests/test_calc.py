@@ -37,6 +37,10 @@ class TestSafeEval(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.calc.safe_eval("5-10")
 
+    def test_negative_float_result_raises(self):
+        with self.assertRaises(ValueError):
+            self.calc.safe_eval("1/3 - 1")
+
     def test_name_rejected(self):
         with self.assertRaises(ValueError):
             self.calc.safe_eval("a+1")
