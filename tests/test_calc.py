@@ -120,6 +120,78 @@ class TestBytesToUnits(unittest.TestCase):
         self.assertEqual(set(u.keys()), {'B', 'KB', 'MB', 'GB', 'TB'})
         self.assertEqual(u['B'], '0')
 
+    def test_exact_fraction(self):
+        # 512 字节 = 0.5 KB，应输出精确小数而非科学计数
+        u = self.calc.bytes_to_units(512)
+        self.assertEqual(u['KB'], '0.5')
+
+    def test_no_scientific_notation(self):
+        # 大数下旧实现会得到 1.80144e+16 之类，新实现必须是完整十进制
+        u = self.calc.bytes_to_units(2 ** 64 - 1)
+        for unit, val in u.items():
+            self.assertNotIn('e', val.lower(), "%s -> %r" % (unit, val))
+
+    def test_full_decimal_value_matches(self):
+        # 完整十进制必须与精确比值一致（用 Fraction 校验）
+        from fractions import Fraction
+        n = 3 * 1024 ** 3 + 7   # 3 GB + 7 字节，GB 为非整数
+        u = self.calc.bytes_to_units(n)
+        self.assertEqual(Fraction(u['GB']), Fraction(n, 1024 ** 3))
+
+
+class TestBytesToUnitsHex(unittest.TestCase):
+    def setUp(self):
+        self.calc = CalcEngine()
+
+    def test_integer_units_get_hex(self):
+        h = self.calc.bytes_to_units_hex(4194304)   # 4 MB
+        self.assertEqual(h['B'], '0x400000')
+        self.assertEqual(h['KB'], '0x1000')
+        self.assertEqual(h['MB'], '0x4')
+
+    def test_non_integer_units_blank(self):
+        h = self.calc.bytes_to_units_hex(4194304)   # 不是整数 GB/TB
+        self.assertEqual(h['GB'], '')
+        self.assertEqual(h['TB'], '')
+
+    def test_zero_all_units(self):
+        h = self.calc.bytes_to_units_hex(0)
+        self.assertTrue(all(v == '0x0' for v in h.values()))
+
+
+class TestExtractBits(unittest.TestCase):
+    def setUp(self):
+        self.calc = CalcEngine()
+
+    def test_full_range(self):
+        self.assertEqual(self.calc.extract_bits(0xABCD, 15, 0), 0xABCD)
+
+    def test_byte_field(self):
+        self.assertEqual(self.calc.extract_bits(0x12345678, 15, 8), 0x56)
+
+    def test_single_bit(self):
+        self.assertEqual(self.calc.extract_bits(0b1000, 3, 3), 1)
+        self.assertEqual(self.calc.extract_bits(0b1000, 2, 2), 0)
+
+    def test_top_bit(self):
+        self.assertEqual(self.calc.extract_bits(1 << 63, 63, 63), 1)
+
+    def test_reported_case_0x100_8_15(self):
+        # 复现用户反馈：提取 0x100 的 bit8-15，应得到 1（无论高低位填写顺序）
+        self.assertEqual(self.calc.extract_bits(0x100, 15, 8), 1)
+        self.assertEqual(self.calc.extract_bits(0x100, 8, 15), 1)
+
+    def test_order_independent(self):
+        # 高低位写反应得到相同结果
+        self.assertEqual(self.calc.extract_bits(0xFF, 3, 5),
+                         self.calc.extract_bits(0xFF, 5, 3))
+
+    def test_out_of_range_raises(self):
+        with self.assertRaises(ValueError):
+            self.calc.extract_bits(0xFF, 64, 0)
+        with self.assertRaises(ValueError):
+            self.calc.extract_bits(0xFF, 5, -1)
+
 
 if __name__ == '__main__':
     unittest.main()

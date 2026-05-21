@@ -111,6 +111,51 @@ class MyGui(Frame):
         self.set_register_bits(value)
         self.show_data()
 
+    # 取位字段：从当前 64 位寄存器中提取 [高位:低位] 的值并显示（含错误提示）
+    def extract_bit_field(self, event=None):
+        try:
+            high = int(self.entry_bit_high.get().strip())
+            low = int(self.entry_bit_low.get().strip())
+        except ValueError:
+            messagebox.showerror("错误", "位号必须为整数")
+            return
+        if high < low:                      # 高低位写反时自动归一，保证位宽为正
+            high, low = low, high
+        value = int(self.get_bin_value(mode='normal'), 2)
+        try:
+            field = self.calc.extract_bits(value, high, low)
+        except ValueError as e:
+            messagebox.showerror("错误", str(e))
+            return
+        self._fill_field_result(field, high - low + 1)
+
+    # 寄存器变化时静默刷新取位结果（输入非法或控件未就绪则跳过，不弹窗）
+    def refresh_bit_field(self):
+        try:
+            high = int(self.entry_bit_high.get().strip())
+            low = int(self.entry_bit_low.get().strip())
+            if high < low:
+                high, low = low, high
+            value = int(self.get_bin_value(mode='normal'), 2)
+            field = self.calc.extract_bits(value, high, low)
+        except (ValueError, AttributeError):
+            return
+        self._fill_field_result(field, high - low + 1)
+
+    # 将取位结果写入只读的 十进制/十六进制/二进制 显示框
+    def _fill_field_result(self, field, width):
+        self._set_readonly_entry(self.entry_field_dec, str(field))
+        self._set_readonly_entry(self.entry_field_hex, hex(field))
+        self._set_readonly_entry(
+            self.entry_field_bin, format(field, '0{}b'.format(width)))
+
+    # 写入只读 Entry：临时解锁 -> 清空 -> 写入 -> 重新锁定
+    def _set_readonly_entry(self, entry, text):
+        entry['state'] = 'normal'
+        entry.delete(0, END)
+        entry.insert(0, text)
+        entry['state'] = 'readonly'
+
     # event end ***************************************************
 
     # 结构体生成函数
@@ -225,8 +270,11 @@ class MyGui(Frame):
         self.frame_show = Frame(self.Window)
         self.frame_choice = Frame(self.frame_show)
         self.frame_calc = Frame(self.frame_show)
-        self.frame_label = Frame(self.frame_show)
-        self.frame_entry = Frame(self.frame_show)
+        # frame_radix 容纳“进制提示列 + 进制回显列”，整体置于上方；
+        # 复选/移位/单位换算/取位等放入 frame_choice，堆叠在其下方以最小化窗口宽度
+        self.frame_radix = Frame(self.frame_show)
+        self.frame_label = Frame(self.frame_radix)
+        self.frame_entry = Frame(self.frame_radix)
 
     @_debug.printk()
     def init_menu(self):
@@ -575,9 +623,12 @@ class MyGui(Frame):
 
         self.frame_label.pack(side=LEFT)
         self.frame_entry.pack(side=LEFT)
+        # 进制区作为一个整体置顶；frame_choice 之后再 pack 即落在其下方
+        self.frame_radix.pack(side=TOP)
 
         self.frame_label.configure(bg=self.bg_color.value)
         self.frame_entry.configure(bg=self.bg_color.value)
+        self.frame_radix.configure(bg=self.bg_color.value)
 
         self.init_value()
 
@@ -629,7 +680,18 @@ class MyGui(Frame):
                                       text="单位换算（输入后回车）",
                                       font=("宋体", 9, "bold"))
         self.label_unit_input.pack(side=TOP, pady=(0, 3))
-        self.size_entries = {}
+        # 列标题：左列十进制（可输入回车换算），右列十六进制（只读，仅整数单位有值）
+        row_unit_head = Frame(self.frame_data_size)
+        Label(row_unit_head, background=self.bg_color.value, text='',
+              width=4, font=("宋体", 9, "bold")).pack(side=LEFT)
+        Label(row_unit_head, background=self.bg_color.value, text="十进制",
+              width=22, font=("宋体", 9, "bold")).pack(side=LEFT)
+        Label(row_unit_head, background=self.bg_color.value, text="十六进制",
+              width=16, font=("宋体", 9, "bold")).pack(side=LEFT, padx=(4, 0))
+        row_unit_head.configure(bg=self.bg_color.value)
+        row_unit_head.pack(side=TOP, anchor='e')
+        self.size_entries = {}        # 十进制输入框（可编辑）
+        self.size_hex_entries = {}    # 十六进制显示框（只读）
         for unit in _calc.CalcEngine.UNITS:
             row = Frame(self.frame_data_size)
             lbl = Label(row, background=self.bg_color.value,
@@ -643,14 +705,74 @@ class MyGui(Frame):
             # 在该单位框回车 -> 按此单位换算（u=unit 锁定当前循环变量）
             ent.bind('<Return>',
                      lambda e, u=unit: self.convert_size_entry(u, e))
+            # 十六进制显示栏：只读，仅当该单位换算为整数时有值，否则留空
+            hex_ent = Entry(row, background='#f0f0f0', width=16,
+                            font=("宋体", 11, "bold"))
+            hex_ent.pack(side=LEFT, padx=(4, 0))
+            hex_ent.insert(0, '0x0')
+            hex_ent['state'] = 'readonly'
             row.configure(bg=self.bg_color.value)
             row.pack(side=TOP, anchor='e')
             self.size_entries[unit] = ent
+            self.size_hex_entries[unit] = hex_ent
         self.frame_data_size.configure(bg=self.bg_color.value)
         self.frame_data_size.pack(side=TOP, pady=5, anchor='e')
+
+        # 取位字段区：从 64 位寄存器中提取 [高位:低位] 的值
+        self.frame_bit_field = Frame(self.frame_choice)
+        Label(self.frame_bit_field, background=self.bg_color.value,
+              text="取位字段（高位:低位，回车或点“提取”）",
+              font=("宋体", 9, "bold")).pack(side=TOP, pady=(8, 3))
+
+        row_bit_in = Frame(self.frame_bit_field)
+        Label(row_bit_in, background=self.bg_color.value, text="高位",
+              font=("宋体", 9, "bold")).pack(side=LEFT)
+        self.entry_bit_high = Entry(row_bit_in, background='#f0f0f0', width=4,
+                                    font=("宋体", 10, "bold"))
+        self.entry_bit_high.insert(0, '63')
+        self.entry_bit_high.bind('<Return>', self.extract_bit_field)
+        self.entry_bit_high.pack(side=LEFT, padx=(2, 8))
+        Label(row_bit_in, background=self.bg_color.value, text="低位",
+              font=("宋体", 9, "bold")).pack(side=LEFT)
+        self.entry_bit_low = Entry(row_bit_in, background='#f0f0f0', width=4,
+                                   font=("宋体", 10, "bold"))
+        self.entry_bit_low.insert(0, '0')
+        self.entry_bit_low.bind('<Return>', self.extract_bit_field)
+        self.entry_bit_low.pack(side=LEFT, padx=(2, 8))
+        self.btn_extract = Button(row_bit_in, background=self.btn_color.value,
+                                  text="提取", command=self.extract_bit_field)
+        self.btn_extract.pack(side=LEFT)
+        row_bit_in.configure(bg=self.bg_color.value)
+        row_bit_in.pack(side=TOP, pady=2)
+
+        # 结果显示：十进制 / 十六进制 / 二进制（只读）
+        self.entry_field_dec = self._make_field_result_row(
+            self.frame_bit_field, "十进制")
+        self.entry_field_hex = self._make_field_result_row(
+            self.frame_bit_field, "十六进制")
+        self.entry_field_bin = self._make_field_result_row(
+            self.frame_bit_field, "二进制")
+
+        self.frame_bit_field.configure(bg=self.bg_color.value)
+        self.frame_bit_field.pack(side=TOP, pady=5)
         # 复选框区域打包
         self.frame_choice.pack(side=TOP)
         self.frame_choice.configure(bg=self.bg_color.value)
+        self.refresh_bit_field()    # 初始化取位结果显示（默认 63:0）
+
+    # 生成一行“标签 + 只读结果框”，返回该 Entry
+    def _make_field_result_row(self, parent, label_text):
+        row = Frame(parent)
+        Label(row, background=self.bg_color.value, text=label_text,
+              width=7, anchor='e', font=("宋体", 9, "bold")).pack(side=LEFT)
+        ent = Entry(row, background='#f0f0f0', width=28,
+                    font=("宋体", 10, "bold"))
+        ent.insert(0, '0')
+        ent.pack(side=LEFT)             # 必须 pack，否则结果框不显示
+        ent['state'] = 'readonly'
+        row.configure(bg=self.bg_color.value)
+        row.pack(side=TOP, anchor='e', pady=1)
+        return ent
 
     @_debug.printk()
     def CWL_change(self, cwl):
@@ -676,6 +798,15 @@ class MyGui(Frame):
         self.entry_hex_shift_set.insert(0, '0')
         self.entry_hex_shift_clear.insert(0, '0')
         self.binary_output['state'] = 'readonly'
+
+        # 复位时恢复单位换算区与取位结果（启动首次调用时这些控件尚未创建，故 hasattr 保护）
+        if hasattr(self, 'size_entries'):
+            for unit, ent in self.size_entries.items():
+                ent.delete(0, END)
+                ent.insert(0, '0')
+                self._set_readonly_entry(self.size_hex_entries[unit], '0x0')
+        if hasattr(self, 'entry_field_dec'):
+            self.refresh_bit_field()
     '''
         数据清除函数
     '''
@@ -693,6 +824,8 @@ class MyGui(Frame):
         self.entry_hex_shift_clear.delete(0, END)
         for ent in self.size_entries.values():
             ent.delete(0, END)
+        for ent in self.size_hex_entries.values():
+            self._set_readonly_entry(ent, '')
         self.binary_output['state'] = 'readonly'
 
     '''
@@ -796,12 +929,15 @@ class MyGui(Frame):
         self.entry_hex_shift_set.insert(0, current_value_str)
         self.entry_hex_shift_clear.insert(0, not_hex)
 
-        # 数据大小：寄存器值视为字节数，同步刷新各单位输入框
+        # 数据大小：寄存器值视为字节数，同步刷新各单位十进制框 + 十六进制栏
         units = self.calc.bytes_to_units(dec)
-        for unit, entry in self.size_entries.items():
-            entry.delete(0, END)
-            entry.insert(0, units[unit])
+        units_hex = self.calc.bytes_to_units_hex(dec)
+        for unit in self.calc.UNITS:
+            self.size_entries[unit].delete(0, END)
+            self.size_entries[unit].insert(0, units[unit])
+            self._set_readonly_entry(self.size_hex_entries[unit], units_hex[unit])
         self.binary_output['state'] = 'readonly'  # 将二进制回显区设置为只读
+        self.refresh_bit_field()    # 取位结果随寄存器变化刷新
 
     '''
         按钮每次点击都会调用该函数，执行完样式更改后调用数据更新函数
@@ -1031,6 +1167,7 @@ class MyGui(Frame):
             self.frame_label.configure(bg=self.bg_color.value)
             self.frame_show.configure(bg=self.bg_color.value)
             self.frame_entry.configure(bg=self.bg_color.value)
+            self.frame_radix.configure(bg=self.bg_color.value)
             self.frame_choice.configure(bg=self.bg_color.value)
 
             # label及占位符背景颜色更换
@@ -1053,6 +1190,14 @@ class MyGui(Frame):
             # 数据大小/单位换算背景色更换
             self.frame_data_size.config(bg=self.bg_color.value)
             for child in self.frame_data_size.winfo_children():
+                child.config(bg=self.bg_color.value)
+                for sub in child.winfo_children():
+                    if isinstance(sub, Label):
+                        sub.config(bg=self.bg_color.value)
+
+            # 取位字段区背景色更换
+            self.frame_bit_field.config(bg=self.bg_color.value)
+            for child in self.frame_bit_field.winfo_children():
                 child.config(bg=self.bg_color.value)
                 for sub in child.winfo_children():
                     if isinstance(sub, Label):

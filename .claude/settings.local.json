@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(python -c \"import ast, tkinter; print\\('ast+tkinter OK'\\)\")",
+      "Bash(python -m pytest --version)",
+      "Bash(python tests/test_calc.py -v)",
+      "Bash(git commit *)",
+      "Bash(python lib/_calc.py)",
+      "Bash(python -c \"print\\('int\\(-0.666\\)=', int\\(-0.666\\)\\); print\\('int\\(-0.5\\)=', int\\(-0.5\\)\\); print\\('int\\(-0.25\\)=', int\\(-0.25\\)\\)\")",
+      "Bash(git *)",
+      "Bash(python -c \"import main\")",
+      "Bash(git show *)",
+      "Read(//tmp/**)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(awk -F: '$2 < 920 && $2 > 850 {print}')",
+      "Bash(python3 -c \"import sys; lines=[\\(int\\(l.split\\(':'\\)[0]\\),l.strip\\(\\)\\) for l in sys.stdin]; prev=[\\(n,l\\) for n,l in lines if n<915]; print\\(prev[-1]\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c \"import sys; lines=sys.stdin.readlines\\(\\); [print\\(i+1, l, end=''\\) for i,l in enumerate\\(lines\\) if 'UNITS' in l]\")",
+      "Bash(python -c \"import calc as _calc; print\\(_calc.CalcEngine.UNITS\\); print\\(_calc.CalcEngine.bytes_to_units.__doc__ if hasattr\\(_calc.CalcEngine.bytes_to_units, '__doc__'\\) else 'no doc'\\)\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'lib'\\); from _calc import CalcEngine; e=CalcEngine\\(\\); print\\(CalcEngine.UNITS\\); print\\(e.bytes_to_units\\(1024\\)\\); print\\(e.unit_to_bytes\\('1','KB'\\)\\)\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'lib'\\); from _calc import CalcEngine; e=CalcEngine\\(\\); print\\(e.bytes_to_units\\(0\\)\\)\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'lib'\\); import main\")",
+      "Bash(python tests/smoke_gui.py)",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"from lib._calc import CalcEngine; c = CalcEngine\\(\\); print\\(c.safe_eval\\('7/2'\\)\\); print\\(c.unit_to_bytes\\(1.5, 'KB'\\)\\); print\\(c.bytes_to_units\\(0\\)\\)\")",
+      "Bash(python tests/test_calc.py)",
+      "Bash(python build.py)",
+      "Bash(python -c \"from PIL import Image; im=Image.open\\('assets/chip.ico'\\); print\\('format:', im.format\\); print\\('sizes:', sorted\\(im.ico.sizes\\(\\)\\) if hasattr\\(im,'ico'\\) else im.size\\)\")",
+      "Bash(ls -la *.spec)",
+      "Bash(ls -la build/*.spec)",
+      "PowerShell(Stop-Process *)",
+      "Bash(python -m unittest tests.test_calc -v)",
+      "Bash(python *)",
+      "Bash(echo \"exit=$?\")"
+    ]
+  }
+}

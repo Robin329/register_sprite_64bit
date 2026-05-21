@@ -105,23 +105,62 @@ class CalcEngine():
             raise ValueError("结果超出 64 位范围")
         return bytes_
 
+    @staticmethod
+    def _exact_decimal(n, idx):
+        '''n / 1024**idx 的精确十进制字符串（永不使用科学计数，去除多余尾随 0）
+
+        1024**idx == 2**(10*idx)，故 n / 2**k == (n * 5**k) / 10**k，
+        分子为整数、分母为 10 的幂，可直接按位拼出精确十进制，避免浮点误差与科学计数。
+        '''
+        n = int(n)
+        if idx == 0:
+            return str(n)
+        k = 10 * idx
+        scaled = n * (5 ** k)            # 等于 n / 2**k 放大 10**k 倍后的整数
+        s = str(scaled).rjust(k + 1, '0')
+        int_part, frac_part = s[:-k], s[-k:]
+        frac_part = frac_part.rstrip('0')
+        return int_part if not frac_part else int_part + '.' + frac_part
+
     def bytes_to_units(self, n):
-        '''字节数 -> {单位: 已格式化字符串}，B 为整数，其余保留有效数字'''
+        '''字节数 -> {单位: 完整十进制字符串}，永不使用科学计数'''
+        n = int(n)
+        return {unit: self._exact_decimal(n, idx)
+                for idx, unit in enumerate(self.UNITS)}
+
+    def bytes_to_units_hex(self, n):
+        '''字节数 -> {单位: 十六进制字符串}，仅当该单位换算结果为整数时给出，否则为空串'''
         n = int(n)
         result = {}
         for idx, unit in enumerate(self.UNITS):
-            if idx == 0:
-                result[unit] = str(n)
-            else:
-                result[unit] = "{:.6g}".format(n / (1024 ** idx))
+            divisor = 1024 ** idx
+            result[unit] = hex(n // divisor) if n % divisor == 0 else ''
         return result
+
+    def extract_bits(self, value, high, low):
+        '''从 64 位 value 中提取 [high:low] 位字段（含两端），返回整数。
+
+        高低位可任意顺序填写（自动归一），但两个位号都必须在 0~63 之间，否则抛 ValueError。
+        '''
+        value = int(value) & self.MAX_U64
+        high = int(high)
+        low = int(low)
+        if high < low:                      # 容忍“高低位写反”，例如把 bit8-15 填成 高8 低15
+            high, low = low, high
+        if not (0 <= low <= high <= 63):
+            raise ValueError("位号必须在 0~63 之间")
+        width = high - low + 1
+        mask = (1 << width) - 1
+        return (value >> low) & mask
 
 
 def main():
     calc = CalcEngine()
-    print(calc.safe_eval("(10+100)*20*(50/10)"))   # 11000
+    print(calc.safe_eval("(10+100)*20*(50/10)"))    # 11000
     print(calc.unit_to_bytes(4, 'MB'))              # 4194304
-    print(calc.bytes_to_units(4194304))             # {'B': '4194304', ...}
+    print(calc.bytes_to_units(4194304))             # {'B': '4194304', 'MB': '4', ...}
+    print(calc.bytes_to_units_hex(4194304))         # {'B': '0x400000', 'GB': '', ...}
+    print(calc.extract_bits(0x12345678, 15, 8))     # 0x56 -> 86
 
 
 if __name__ == '__main__':

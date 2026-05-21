@@ -114,8 +114,8 @@ def build(args):
 def main():
     parser = argparse.ArgumentParser(
         description="将 Register Sprite 64bit 打包为独立 Windows exe")
-    parser.add_argument('--name', default='RegisterSprite',
-                        help='exe 名称（默认 RegisterSprite）')
+    parser.add_argument('--name', default='register_sprite_64bit',
+                        help='exe 名称（默认 register_sprite_64bit，与项目/常用运行名一致）')
     parser.add_argument('--onedir', action='store_true',
                         help='打包为文件夹而非单文件（启动更快）')
     parser.add_argument('--console', action='store_true',
