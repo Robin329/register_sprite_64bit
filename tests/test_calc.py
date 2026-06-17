@@ -193,5 +193,44 @@ class TestExtractBits(unittest.TestCase):
             self.calc.extract_bits(0xFF, 5, -1)
 
 
+class TestShift(unittest.TestCase):
+    def setUp(self):
+        self.calc = CalcEngine()
+
+    def test_left_basic(self):
+        self.assertEqual(self.calc.shift(1, 4, 'left'), 0x10)
+
+    def test_right_basic(self):
+        self.assertEqual(self.calc.shift(0x10, 4, 'right'), 1)
+
+    def test_left_zero_count(self):
+        self.assertEqual(self.calc.shift(0xABCD, 0, 'left'), 0xABCD)
+
+    def test_left_overflow_masked(self):
+        # 高位移出 64 位范围应被丢弃
+        self.assertEqual(self.calc.shift(1 << 63, 1, 'left'), 0)
+        self.assertEqual(self.calc.shift(self.calc.MAX_U64, 4, 'left'),
+                         (self.calc.MAX_U64 << 4) & self.calc.MAX_U64)
+
+    def test_right_logical(self):
+        # 逻辑右移，高位补 0
+        self.assertEqual(self.calc.shift(self.calc.MAX_U64, 60, 'right'), 0xF)
+
+    def test_right_shift_out_all(self):
+        self.assertEqual(self.calc.shift(self.calc.MAX_U64, 64, 'right'), 0)
+
+    def test_negative_count_raises(self):
+        with self.assertRaises(ValueError):
+            self.calc.shift(1, -1, 'left')
+
+    def test_count_too_large_raises(self):
+        with self.assertRaises(ValueError):
+            self.calc.shift(1, 65, 'left')
+
+    def test_unknown_direction_raises(self):
+        with self.assertRaises(ValueError):
+            self.calc.shift(1, 1, 'up')
+
+
 if __name__ == '__main__':
     unittest.main()

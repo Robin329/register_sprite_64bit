@@ -385,13 +385,13 @@ class MyGui(Frame):
                            )
             lbl.grid(row=row,
                      column=column + i,
-                     sticky=W + E + N + S, padx=7, pady=7)
+                     sticky=W + E + N + S, padx=3, pady=(2, 0))
 
             # 创建按钮
             obj = Button(frame,
                          text='0',
                          width='3',
-                         height='2',
+                         height='1',
                          background=self.btn_color.value,
                          font=("宋体", 9, "bold"))
 
@@ -402,7 +402,7 @@ class MyGui(Frame):
 
             '''
             obj.config(command=lambda button=obj: self.set_bit(button))
-            obj.grid(row=row + 1, column=column + i)
+            obj.grid(row=row + 1, column=column + i, padx=3, pady=(0, 4))
 
             # label上显示的字符减一
             self.btn_num -= 1
@@ -428,7 +428,7 @@ class MyGui(Frame):
             self.placeholder_list.append(lbl)
             lbl.grid(row=10,
                      column=i,
-                     sticky=W + E + N + S, padx=7, pady=7)
+                     sticky=W + E + N + S, padx=7, pady=0)
         for i in range(19):
             lbl = Label(self.frame_btn_row2,
                         background=self.bg_color.value,
@@ -437,7 +437,7 @@ class MyGui(Frame):
             self.placeholder_list.append(lbl)
             lbl.grid(row=10,
                      column=i,
-                     sticky=W + E + N + S, padx=7, pady=7)
+                     sticky=W + E + N + S, padx=7, pady=0)
         for i in range(19):
             lbl = Label(self.frame_btn_row3,
                         background=self.bg_color.value,
@@ -446,7 +446,7 @@ class MyGui(Frame):
             self.placeholder_list.append(lbl)
             lbl.grid(row=10,
                      column=i,
-                     sticky=W + E + N + S, padx=7, pady=7)
+                     sticky=W + E + N + S, padx=7, pady=0)
         for i in range(19):
             lbl = Label(self.frame_btn_row4,
                         background=self.bg_color.value,
@@ -455,7 +455,7 @@ class MyGui(Frame):
             self.placeholder_list.append(lbl)
             lbl.grid(row=10,
                      column=i,
-                     sticky=W + E + N + S, padx=7, pady=7)
+                     sticky=W + E + N + S, padx=7, pady=0)
 
         '''第一部分用来生63-32位的label和button'''
         pad = 0
@@ -623,8 +623,8 @@ class MyGui(Frame):
 
         self.frame_label.pack(side=LEFT)
         self.frame_entry.pack(side=LEFT)
-        # 进制区作为一个整体置顶；frame_choice 之后再 pack 即落在其下方
-        self.frame_radix.pack(side=TOP)
+        # 进制区放在下半部分左列；frame_choice 之后 pack 到右列，两列并排以压缩高度
+        self.frame_radix.pack(side=LEFT, anchor='n', padx=(0, 12))
 
         self.frame_label.configure(bg=self.bg_color.value)
         self.frame_entry.configure(bg=self.bg_color.value)
@@ -656,6 +656,19 @@ class MyGui(Frame):
                               text="右移")
         self.rsh_btn.config(command=self.right_shift)
         self.rsh_btn.pack(side=LEFT)
+
+        # 移位位数输入框：手动填写左移/右移多少 bit（默认 1，回车按左移执行）
+        self.label_shift_bits = Label(self.pro_btn_frame,
+                                      background=self.bg_color.value,
+                                      text="位数",
+                                      font=("宋体", 9, "bold"))
+        self.label_shift_bits.pack(side=LEFT, padx=(6, 2))
+        self.entry_shift_bits = Entry(self.pro_btn_frame,
+                                      background='#f0f0f0',
+                                      width=4,
+                                      font=("宋体", 10, "bold"))
+        self.entry_shift_bits.insert(0, '1')
+        self.entry_shift_bits.pack(side=LEFT, padx=(0, 6))
 
         # 求非功能按键
         self.not_btn = Button(self.pro_btn_frame,
@@ -755,8 +768,8 @@ class MyGui(Frame):
 
         self.frame_bit_field.configure(bg=self.bg_color.value)
         self.frame_bit_field.pack(side=TOP, pady=5)
-        # 复选框区域打包
-        self.frame_choice.pack(side=TOP)
+        # 复选框/功能区作为下半部分右列，与进制区并排，压缩整体高度
+        self.frame_choice.pack(side=LEFT, anchor='n')
         self.frame_choice.configure(bg=self.bg_color.value)
         self.refresh_bit_field()    # 初始化取位结果显示（默认 63:0）
 
@@ -1052,53 +1065,36 @@ class MyGui(Frame):
         左右移位功能
     '''
 
+    # 读取“位数”输入框，返回 0~64 的移位位数；非法输入弹窗提示并返回 None
+    def _get_shift_bits(self):
+        text = self.entry_shift_bits.get().strip()
+        try:
+            bits = int(text)
+        except ValueError:
+            messagebox.showerror("错误", "移位位数必须为整数")
+            return None
+        if bits < 0 or bits > 64:
+            messagebox.showerror("错误", "移位位数必须在 0~64 之间")
+            return None
+        return bits
+
+    # 按指定方向移位（'left'/'right'），位数取自“位数”输入框
+    def _do_shift(self, direction):
+        bits = self._get_shift_bits()
+        if bits is None:
+            return
+        value = int(self.get_bin_value(mode='normal'), 2)
+        result = self.calc.shift(value, bits, direction)
+        self.set_register_bits(result)
+        self.show_data()
+
     @_debug.printk()
     def left_shift(self):
-        # 得到二进制数据
-        _bin = self.get_bin_value(mode='normal')
-
-        # 判断数据是否有效
-        if int(_bin) == 0:
-            return
-
-        # 左移数据
-        _bin += '0'
-        _bin = _bin[1:]
-
-        # 更新数据
-        cnt = 0
-        for bit in _bin:
-            self.btn_list[cnt]['text'] = bit
-            cnt += 1
-
-        # 显示更新
-        self.update_btn_style()
-        self.show_data()
+        self._do_shift('left')
 
     @_debug.printk()
     def right_shift(self):
-        # print(' called！')
-        # 得到二进制数据
-        _bin = self.get_bin_value(mode='normal')
-
-        # 判断数据是否有效
-        if int(_bin) == 0:
-            return
-
-        # 右移数据处理
-        origin_bin = '0'
-        origin_bin += _bin
-        _bin = origin_bin[:64]
-
-        # 更新数据
-        cnt = 0
-        for bit in _bin:
-            self.btn_list[cnt]['text'] = bit
-            cnt += 1
-
-        # 显示更新
-        self.update_btn_style()
-        self.show_data()
+        self._do_shift('right')
 
     '''
         窗口置顶函数
@@ -1183,6 +1179,9 @@ class MyGui(Frame):
             # 置位及清零label背景颜色更换
             self.label_hex_shift_set.config(bg=self.bg_color.value)
             self.label_hex_shift_clear.config(bg=self.bg_color.value)
+
+            # 移位位数label背景颜色更换
+            self.label_shift_bits.config(bg=self.bg_color.value)
 
             # checkbox背景颜色更换
             self.ck_btn.config(bg=self.bg_color.value)

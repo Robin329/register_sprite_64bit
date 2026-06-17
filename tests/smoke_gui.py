@@ -84,7 +84,25 @@ def main():
     assert app.entry_field_dec.get() == "1", \
         "reversed-order extract failed: %r" % app.entry_field_dec.get()
 
-    # 5) 复位与背景色切换不应抛异常（验证无残留控件引用）
+    # 5) 手动位数移位：左移 4 位、右移 8 位
+    root.update()   # 触发布局，确保新控件已 mapped
+    assert app.entry_shift_bits.winfo_ismapped(), "shift-bits entry not displayed"
+    app.bit_reset()
+    app.decimal_output.delete(0, tk.END)
+    app.decimal_output.insert(0, "1")
+    app.update_dec_btn_val_by_entry(None)
+    app.entry_shift_bits.delete(0, tk.END)
+    app.entry_shift_bits.insert(0, "4")
+    app.left_shift()
+    assert app.decimal_output.get() == str(0x10), \
+        "left shift 4 failed: %r" % app.decimal_output.get()
+    app.entry_shift_bits.delete(0, tk.END)
+    app.entry_shift_bits.insert(0, "8")
+    app.right_shift()
+    assert app.decimal_output.get() == "0", \
+        "right shift 8 failed: %r" % app.decimal_output.get()
+
+    # 6) 复位与背景色切换不应抛异常（验证无残留控件引用）
     app.bit_reset()
     app.ChangeBackgroundColor("纯白")
 

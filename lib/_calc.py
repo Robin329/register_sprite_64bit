@@ -153,6 +153,24 @@ class CalcEngine():
         mask = (1 << width) - 1
         return (value >> low) & mask
 
+    def shift(self, value, count, direction):
+        '''对 64 位 value 做逻辑移位，返回移位后的整数（限制在 0~2^64-1）。
+
+        direction='left' 左移、'right' 右移；count 为移动位数，必须在 0~64 之间，
+        否则抛 ValueError。左移溢出的高位被丢弃，右移为逻辑右移（高位补 0）。
+        '''
+        value = int(value) & self.MAX_U64
+        count = int(count)
+        if count < 0:
+            raise ValueError("移位位数不能为负")
+        if count > 64:
+            raise ValueError("移位位数不能超过 64")
+        if direction == 'left':
+            return (value << count) & self.MAX_U64
+        if direction == 'right':
+            return value >> count
+        raise ValueError("未知移位方向")
+
 
 def main():
     calc = CalcEngine()
